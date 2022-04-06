@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Friends
+{% endblock title %}
+
+{% block content %}
+    {% if friend_requests %}
+    <h2 class="ui centered header">Friend Requests</h2>
+    <hr class="hr-divider">
+        <div class="ui centered cards">
+            {% for user_profile in friend_requests %}
+              <div class="card">
+                <div class="content">
+                    <a href=""><img class="right friend-request small floated ui image" src="{{ user_profile.sender.avatar.url }}"></a>
+                  <div class="header">
+                      <a href="#">{{ user_profile.sender.first_name }} {{ user_profile.sender.last_name }}</a>
+                  </div>
+                  <div class="meta">
+                    Some message with request
+                  </div>
+                </div>
+                <div class="extra content">
+                  <div class="ui two buttons">
+                      <form action="{% url 'profiles:accept-reject-invitation' %}" method="POST">
+                          {% csrf_token %}
+                          <input type="hidden" name="profile_pk" value="{{user_profile.sender.pk}}">
+                          <button type="submit" name="approve_request"
+                                  class="ui approve-decline-btn basic green button">
+                              <i class="check icon"></i>
+                              Approve
+                          </button>
+                      </form>
+                      <form action="{% url 'profiles:accept-reject-invitation' %}" method="POST">
+                          {% csrf_token %}
+                          <input type="hidden" name="profile_pk" value="{{user_profile.sender.pk}}">
+                          <button type="submit" name="decline_request"
+                                  class="ui approve-decline-btn basic red button">
+                              <i class="close icon"></i>
+                              Decline
+                          </button>
+                      </form>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+<h2 class="ui centered header">All your friends</h2>
+<hr class="hr-divider">
+
+{% for friend in request.user.profile.friends.all %}
+    {{ friend }}
+{% endfor %}
+{% endblock content %}
+
+{% block scripts %}
+<script>
+
+</script>
+{% endblock scripts %}

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}
+posts
+{% endblock %}
+
+{% block content %}
+
+{% for obj in qs %}
+  <p>{{ obj.content }}</p>
+{% endfor %}
+
+{% endblock %}

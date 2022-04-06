@@ -1,0 +1,47 @@
+<!--{% url 'home-view' as path_to_home %}-->
+<!--{% url 'posts:main-post-view' as path_to_posts %}-->
+<!--{% url 'profiles:my-profile-view' as path_to_my_profile %}-->
+<!--{% url 'profiles:my-invites-view' as path_to_my_invites %}-->
+<!--{% url 'profiles:friends' as friends %}-->
+<!--{% url 'profiles:all-profiles-view' as all_profiles %}-->
+<!--{% url 'profiles:profile-detail-view' slug=request.user.profile.slug as my_profile %}-->
+<div class="ui inverted menu nav mb-7">
+  <div class="ui container">
+    <a href="{{path_to_home}}" class="{% if request.path == path_to_home %}active{% endif %} item">
+        <h3>InTouch</h3>
+    </a>
+    {% if request.user.is_authenticated %}
+    <a href="{{ my_profile }}" class="{% if request.path == path_to_posts %}active{% endif %} item">
+        My profile
+    </a>
+    <a href="{{friends}}" class="{% if request.path == path_to_posts %}active{% endif %} item">
+        Friends
+    </a>
+    <a href="{{all_profiles}}" class="{% if request.path == path_to_posts %}active{% endif %} item">
+        All profiles
+    </a>
+    {% endif %}
+
+    <div class="right menu">
+        {% if request.user.is_authenticated %}
+             <div class="item">
+              <form action="" method="GET">
+                <div class="ui action left icon input">
+                <input class="prompt" type="text" name='q' placeholder="name of a friend...">
+                <i class="search icon"></i>
+                <button type='submit' class="ui button">Search</button>
+                </div>
+            </form>
+            </div>
+
+            <a href="" class="ui item">
+                Logout
+            </a>
+        {% else %}
+        <a href="" class="ui item">
+                Login
+            </a>
+        {% endif %}
+    </div>
+  </div>
+</div>

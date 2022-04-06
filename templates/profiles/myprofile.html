@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load static %}
+{% block title %}
+My Profile
+{% endblock %}
+
+{% block content %}
+<!-- Modal -->
+<div class="ui modal profile my-modal">
+  <i class="close icon"></i>
+  <div class="header">
+    Update your profile
+  </div>
+  <div class="image content">
+    <div class="ui medium image">
+      <img src="{{ profile.avatar.url }}">
+    </div>
+    <div class="description">
+      <div class="ui header">Change your info here</div>
+        <form id="update_profile" name="submit_profile" action="" method="POST" class="ui form" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+        </form>
+    </div>
+  </div>
+  <div class="actions">
+    <button form="update_profile" name="submit_profile" type="submit"
+            class="ui positive right labeled icon button">
+      Update
+      <i class="checkmark icon"></i>
+    </button>
+
+  </div>
+</div>
+
+<!--Alert-Message -->
+{% if confirm %}
+    <div class="ui message positive">
+        <i class="close icon"></i>
+        <div class="header">
+            Updated
+        </div>
+    </div>
+{% endif %}
+<div class="ui segment">
+    <!-- Profile info -->
+    <h3>{{ profile.first_name }} {{ profile.last_name }}</h3>
+    <hr>
+    <div class="ui grid">
+        <div class="row ui center aligned">
+            <div class="six wide column">
+                <img class="avatar ui small rounded image" src="{{ profile.avatar.url }}"/>
+                <br/>
+                <button class="ui secondary button" id="modal-btn-edit-profile">Edit profile</button>
+            </div>
+            <div class="ten wide column">
+                <table class="ui table">
+                    <tbody>
+                        <tr>
+                            <td>Birthdate</td>
+                            <td>12.03.1997</td>
+                        </tr>
+                        <tr>
+                            <td>Country</td>
+                            <td>{{ profile.country }}</td>
+                        </tr>
+                        <tr>
+                            <td>City</td>
+                            <td>Moscow</td>
+                        </tr>
+                        <tr>
+                            <td>Bio</td>
+                            <td>{{ profile.bio }}</td>
+                        </tr>
+                        <tr>
+                            <td>All posts num</td>
+                            <td>{{ profile.get_posts_no }}</td>
+                        </tr>
+                        <tr>
+                            <td>All given likes</td>
+                            <td>{{ profile.get_likes_given_no }}</td>
+                        </tr>
+                        <tr>
+                            <td>All recieved likes</td>
+                            <td>{{ profile.get_likes_recieved_no }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p></p>
+            </div>
+
+        </div>
+        <!-- Friends list -->
+        <div class="row ui center aligned">
+            <div class="six wide column">
+                <div class="friends">
+                    <h2>Friends ({{ profile.get_friends_no }})</h2>
+                    {% for friend in profile.get_friends %}
+                        <div class="friend" >
+                            <p> {{ friend }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        <!-- Friends list end -->
+
+        <!-- Posts start -->
+            <div class="ten wide column">
+                <h2>My Posts </h2>
+                {% if post_added %}
+                    <div class="ui message positive">
+                        <i class="close icon"></i>
+                        <div class="header">
+                            New post was successfully added
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="ui segment raised create-post-form">
+                    <form action="" method="POST" class="ui form" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="page_id" value="{{ profile.user.id }}">
+                        {{ post_form }}
+                        <button type="submit" name="submit_post" class="ui button positive">
+                            Send post
+                        </button>
+                    </form>
+                </div>
+                {% for post in posts %}
+                <div class="ui segment raised profile-posts">
+                    <a name="post-{{ post.id }}" style="display: none;"></a>
+                    <div class="post-header">
+                        {% if request.user == post.author.user or request.user.id == post.page_id  %}
+                            <form action="{% url 'profiles:delete-update-post' %}" method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="post_id" value="{{ post.id }}">
+                                <button name="delete_post" title="Delete post" type="submit"  class="delete-post-button"><i class="close icon"></i></button>
+                              </form>
+                        {% endif %}
+                        <img class="post-avatar image" src="{{ post.author.avatar.url }}"/>
+                        <p class="post-author">{{ post.author.first_name }} {{ post.author.last_name }}</p>
+                        <p class="post-time">{{ post.created | naturalday }}</p>
+                    </div>
+                    <p class="post-text">{{ post.content }}</p>
+                    <p class="post-img">
+                        {% if post.image %}
+                            <img class="post-img" src="{{ post.image.url }}" alt="">
+                        {% endif %}
+<!--                        <img class="post-img" src="https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg" alt="">-->
+                    </p>
+                    <!-- Start post-actions -->
+                    <div class="post-actions">
+                        <div class="ui tiny labeled button" tabindex="0">
+                            <form action="{% url 'profiles:like-post-view' %}" method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="post_id" value="{{ post.id }}">
+
+                                        {% if profile in post.liked.all %}
+                                            <button type="submit"
+                                                    class="ui tiny black button like-button-counter">
+                                                <i class="heart icon"></i> Unlike
+                                            </button>
+                            </form>
+                                            <a class="ui basic black left  label"
+                                               data-tooltip="List of users who liked your post"
+                                               data-inverted="">
+                                                    {{ post.num_likes }}
+                                            </a>
+                                        {% else %}
+                                            <button type="submit"
+                                                    class="ui tiny  red button like-button-counter">
+                                                <i class="heart icon"></i> Like
+                                            </button>
+                                            </form>
+                                            <a class="ui basic red left  label"
+                                               data-tooltip="List of users who liked your post"
+                                               data-inverted="">
+                                                    {{ post.num_likes }}
+                                            </a>
+                                        {% endif %}
+
+                        </div>
+                        <a class="post-add-comment"><i class="pencil alternate icon"></i>Add comment</a>
+                    </div>
+                    <!-- End post-actions -->
+                    <!-- Start comments -->
+                    <div class="ui comments">
+                      <h3 class="ui dividing header">Comments</h3>
+                        {% for comment in post.comment_set.all %}
+                          <div class="comment">
+                              {% if request.user == comment.user.user or request.user == comment.user %}
+                             <!-- Modal delete comment start -->
+                              <form action="{% url 'profiles:delete-update-comment' %}" method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="post_id" value="{{ post.id }}">
+                                <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                                <button name="delete_comment" title="Delete comment" type="submit"  class="delete-comment-button"><i class="close icon"></i></button>
+                              </form>
+                              {% endif %}
+                              <!-- Modal delete comment end -->
+                              <!-- Modal update comment start -->
+                              {% if request.user == comment.user.user %}
+                                <div class="ui modal update-comment-{{ comment.id }} my-modal">
+                                  <i class="close icon"></i>
+                                  <div class="header">
+                                    Update comment
+                                  </div>
+                                  <div class="image content">
+                                    <div class="description">
+                                      <div class="ui header">Change your comment here</div>
+                                        <form id="update_comment-{{ comment.id }}" name="update_comment" action="{% url 'profiles:delete-update-comment' %}"
+                                              method="POST" class="ui form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                                            <input type="hidden" name="post_id" value="{{ post.id }}">
+                                            <input type="text" name="comment_body" value="{{ comment.body }}">
+                                        </form>
+                                    </div>
+                                  </div>
+                                  <div class="actions">
+                                    <button form="update_comment-{{ comment.id }}" name="update_comment" type="submit"
+                                            class="ui positive right labeled icon button">
+                                      Update
+                                      <i class="checkmark icon"></i>
+                                    </button>
+
+                                  </div>
+                                </div>
+                                <button title="Edit comment" onclick="$('.ui.modal.update-comment-{{ comment.id }}') .modal('show');" class="update-comment-button"><i class="edit icon"></i></button>
+                              {% endif %}
+                            <a class="avatar-comments">
+                              <img src="{{ comment.user.avatar.url }}">
+                            </a>
+                            <div class="content">
+                              <a class="author">
+                                  {{ comment.user.first_name }} {{ comment.user.last_name }}
+                              </a>
+                              <div class="metadata">
+                                <span class="date">{{ comment.created | naturalday }}</span>
+                              </div>
+                              <div class="text">
+                                <p>{{ comment.body }}</p>
+                                <div class="actions">
+                                    <a class="reply">Reply</a>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      <form action="#post-{{ post.id }}" method="POST" class="ui reply form comments-form">
+                        {% csrf_token %}
+                        {{ comment_form }}
+                        <input type="hidden" name="post_id" value="{{ post.id }}">
+                        <button type="submit" name="submit_comment"
+                                class="ui mini blue labeled submit icon button comment-submit-button">
+                          <i class="icon edit"></i> Add Reply
+                        </button>
+                      </form>
+                    <!-- End comments -->
+
+                </div>
+            </div>        
+            {% endfor %}
+            <!-- Posts end -->
+
+
+        </div>
+    </div>
+    <hr>
+
+</div>
+
+{% endblock %}

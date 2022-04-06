@@ -1,0 +1,137 @@
+body {
+    background-color: #f8f8f8 !important;
+}
+
+.nav {
+    border-radius: 0 !important;
+    padding 0 0 10px 0 !important;
+    margin-top: 0px !important;
+}
+
+.avatar {
+    width: 200px !important;
+    height: 200px;
+    margin-bottom: 20px;
+}
+
+.message-success {
+    background-color: #DFF8EB;
+}
+
+.my-modal {
+    height: 300px !important;
+    top: 220px !important;
+    font-size: 20px !important;
+}
+
+.profile-posts {
+
+}
+
+.submit-post {
+    margin-top: 20px !important;
+}
+
+.post-avatar {
+    width: 40px !important;
+    border-radius: 100px;
+    float: left;
+    margin-right: 10px;
+}
+
+.post-author {
+    color: #2284D0;
+    margin: 0;
+    text-align: left;
+}
+
+.post-time {
+    color: #858585;
+    margin: 0;
+    text-align: left;
+}
+
+.post-text {
+    margin: 5px 0 5px 0;
+    text-align: left;
+}
+
+.post-img {
+    width: 100%;
+}
+
+.post-actions {
+    height: 40px;
+}
+
+.post-actions .button {
+    float: right;
+}
+
+.post-add-comment {
+    color: #858585;
+    float: left;
+    margin-top: 9px;
+}
+
+.like-button-counter {
+    margin-right: -5px;
+}
+
+.create-post-form {
+
+}
+
+.comments {
+    text-align: left;
+}
+
+.avatar-comments {
+    width: 50px;
+}
+
+.avatar-comments img {
+    width: 50px;
+    margin-right: 20px;
+    float: left;
+}
+
+.comment .content {
+    margin-left: 70px;
+}
+
+.comment-submit-button {
+    float: right;
+    margin-top: 10px !important;
+}
+
+.comments-form {
+    height: 100px;
+}
+
+.delete-post-button, .update-post-button,
+.delete-comment-button, .update-comment-button, .delete-post-button {
+    float: right;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.1;
+}
+
+.friend-card {
+    background-color: #f0fffb !important;
+}
+
+.hr-divider {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+img.friend-request {
+    width: 115px !important;
+}
+
+.approve-decline-btn {
+    border-radius: 5px !important;
+    margin-right: 10px !important;
+}

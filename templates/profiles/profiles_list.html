@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}
+All profiles
+{% endblock title %}
+
+{% block content %}
+    <div class="ui five doubling cards">
+        {% if is_empty %}
+            <h2 class="ui header">No profiles</h2>
+        {% endif %}
+        {% for user_profile in qs %}
+        {% if request.user in user_profile.friends.all %}
+            <div class="card friend-card">
+        {% else %}
+            <div class="card">
+        {% endif %}
+            <div class="blurring dimmable image">
+              <div class="ui dimmer">
+                <div class="content">
+                  <div class="center">
+                      <!--Если пользователь не в друзьях и заявок не было-->
+                      <form action="{% url 'profiles:send-invite' %}" method="POST">
+                          {% csrf_token %}
+                          <input type="hidden" name="profile_pk" value="{{ user_profile.pk}}">
+                          {% if user_profile.user not in rel_receiver and user_profile.user not in rel_sender %}
+                                <button type="submit" name="add_friend" class="ui inverted button">Add Friend</button>
+                          {% endif %}
+                      </form>
+                      <!--Если мы уже отправили заявку в друзья-->
+                      {% if user_profile.user in rel_receiver and request.user not in user_profile.friends.all %}
+                        <button class="ui disabled button" >Waiting for approval from user</button>
+                      {% endif %}
+                      <!--Если нам уже отправили заявку в друзья-->
+                      {% if user_profile.user in rel_sender and request.user not in user_profile.friends.all %}
+                        <button class="ui disabled button" >Waiting for acceptance from you</button>
+                      {% endif %}
+                      <!--Если мы уже друзья-->
+                      {% if request.user in user_profile.friends.all %}
+                          <form action="{% url 'profiles:remove-friend' %}" method="POST">
+                              {% csrf_token %}
+                              <input type="hidden" name="profile_pk" value="{{ user_profile.pk}}">
+                              <button name="delete_friend" class="ui negative button" >Remove from friends</button>
+                          </form>
+                      {% endif %}
+                      <form action="" method="POST">
+                          {% csrf_token %}
+                          <input type="hidden" name="profile_pk" value="{{ user_profile.pk}}">
+                      </form>
+
+                  </div>
+                </div>
+              </div>
+              <img src="{{ user_profile.avatar.url }}">
+            </div>
+            <div class="content">
+              <a href="/profiles/{{ user_profile.slug }}" class="header">{{ user_profile.first_name }} {{ user_profile.last_name }}</a>
+              <div class="meta">
+                <span class="date">{{ user_profile.country }}</span>
+              </div>
+            </div>
+            <div class="extra content">
+              <a>
+                <i class="users icon"></i>
+                2 Members
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+
+    </div>
+{% endblock content %}
+
+{% block scripts %}
+<script>
+
+</script>
+{% endblock scripts %}
+
