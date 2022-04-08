@@ -52,11 +52,32 @@
             <div class="six wide column">
                 <img class="avatar ui small rounded image" src="{{ profile.avatar.url }}"/>
                 <br/>
-                {% if request.user in profile.friends.all %}
-                    <p class="ui positive basic button">{{ profile.first_name }} in your friends</p>
-                {% endif %}
                 {% if request.user == profile.user %}
-                    <button class="ui secondary button" id="modal-btn-edit-profile">Edit profile</button>
+                    <button class="ui secondary button profile-action-button" id="modal-btn-edit-profile">Edit profile</button>
+                {% endif %}
+                <form action="{% url 'profiles:send-invite' %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="profile_pk" value="{{ profile.pk}}">
+                    {% if profile.user not in rel_receiver and request.user not in rel_sender %}
+                        {% if request.user != profile.user and not request.user in profile.friends.all  %}
+                            <button type="submit" name="add_friend" class="ui positive button profile-action-button">Add Friend</button>
+                        {% endif %}
+                    {% endif %}
+                </form>
+                <!-- Если уже друзья -->
+                {% if request.user in profile.friends.all %}
+                    <p class="ui positive basic button profile-action-button">{{ profile.first_name }} in your friends</p>
+                    <form action="{% url 'profiles:remove-friend' %}" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="profile_pk" value="{{ profile.pk}}">
+                        <button name="delete_friend" class="ui negative button profile-action-button" >Remove from friends</button>
+                    </form>
+                {% elif profile.user in rel_receiver and request.user not in profile.friends.all %}
+                    <!--Если мы уже отправили заявку в друзья-->
+                    <button class="ui disabled button profile-action-button" >Waiting for approval from user</button>
+                {% elif request.user in rel_sender and request.user not in profile.friends.all %}
+                    <!--Если нам уже отправили заявку в друзья-->
+                    <button class="ui disabled button profile-action-button" >Waiting for acceptance from you</button>
                 {% endif %}
             </div>
             <div class="ten wide column">
@@ -98,14 +119,37 @@
         </div>
         <!-- Friends list -->
         <div class="row ui center aligned">
-            <div class="six wide column">
-                <div class="friends">
-                    <h2>Friends ({{ profile.get_friends_no }})</h2>
+            <div class="six wide column friends-container">
+                <h2><a href="{% url 'profiles:friends' %}" >Friends ({{ profile.get_friends_no }})</a></h2>
+                <div class="ui three column centered friends">
+                    <div class="ui grid centered">
                     {% for friend in profile.get_friends %}
-                        <div class="friend" >
-                            <a href="/profiles/{{ friend.profile.slug }}"> {{ friend }}</a>
+                        <div class="friend column wide" >
+                            <a href="/profiles/{{ friend.profile.slug }}" class="ui ">
+                                <img class="ui circular image friend-avatar" src="{{ friend.profile.avatar.url }}"/>
+                                <p>{{ friend.profile.first_name }} {{ friend.profile.last_name }}</p>
+                            </a>
+                        </div>
+                        <div class="friend column wide" >
+                            <a href="/profiles/{{ friend.profile.slug }}" class="ui ">
+                                <img class="ui circular image friend-avatar" src="{{ friend.profile.avatar.url }}"/>
+                                <p>{{ friend.profile.first_name }} {{ friend.profile.last_name }}</p>
+                            </a>
+                        </div>
+                        <div class="friend column wide" >
+                            <a href="/profiles/{{ friend.profile.slug }}" class="ui ">
+                                <img class="ui circular image friend-avatar" src="{{ friend.profile.avatar.url }}"/>
+                                <p>{{ friend.profile.first_name }} {{ friend.profile.last_name }}</p>
+                            </a>
+                        </div>
+                        <div class="friend column wide" >
+                            <a href="/profiles/{{ friend.profile.slug }}" class="ui ">
+                                <img class="ui circular image friend-avatar" src="{{ friend.profile.avatar.url }}"/>
+                                <p>{{ friend.profile.first_name }} {{ friend.profile.last_name }}</p>
+                            </a>
                         </div>
                     {% endfor %}
+                    </div>
                 </div>
             </div>
         <!-- Friends list end -->

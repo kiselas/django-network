@@ -7,10 +7,13 @@ body {
     padding 0 0 10px 0 !important;
     margin-top: 0px !important;
 }
+.nav .item.active {
+    background: #e0e1e2 none;
+    color: #000;
+}
 
 .avatar {
-    width: 200px !important;
-    height: 200px;
+    width: 280px !important;
     margin-bottom: 20px;
 }
 
@@ -134,4 +137,38 @@ img.friend-request {
 .approve-decline-btn {
     border-radius: 5px !important;
     margin-right: 10px !important;
+}
+
+.friends-container {
+
+}
+
+.friends {
+        padding: 1em 10px !important;
+        margin: 1rem 0;
+        -webkit-box-shadow: 0 2px 4px 0 rgb(34 36 38 / 12%), 0 2px 10px 0 rgb(34 36 38 / 15%);
+        box-shadow: 0 2px 4px 0 rgb(34 36 38 / 12%), 0 2px 10px 0 rgb(34 36 38 / 15%);
+        border-radius: 0.28571429rem;
+        border: 1px solid rgba(34,36,38,.15);
+}
+
+
+.friends .friend {
+    text-align: center !important;
+    width: 70px !important;
+    padding: 20px;
+}
+@media screen and (min-width: 900px) {
+  article {
+    padding: 1rem 3rem;
+  }
+}
+.friend-avatar {
+    width: 60px !important;
+    min-width: 50px !important;
+    display: block !important;
+}
+
+.profile-action-button {
+    margin-bottom: 10px !important;
 }

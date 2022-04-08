@@ -5,7 +5,6 @@ home
 {% endblock title %}
 
 {% block content %}
-{% if not request.user.is_authenticated %}
 <form class="ui form" action="{% url 'login' %}" method="POST">
     {% csrf_token %}
   <div class="field">
@@ -14,7 +13,7 @@ home
   </div>
   <div class="field">
     <label>Password</label>
-    <input type="password" name="password" placeholder="password" required>
+    <input type="text" name="password" placeholder="password" required>
   </div>
   <div class="field">
     <div class="ui checkbox">
@@ -24,9 +23,6 @@ home
   </div>
   <button type="submit" value="Login" class="ui button">Submit</button>
 </form>
-{% else %}
-    <meta http-equiv="refresh" content="0; url={% url 'profiles:profile-detail-view' slug=request.user.profile.slug %}"/>
-{% endif %}
 {% endblock content %}
 
 {% block scripts %}

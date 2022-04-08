@@ -49,9 +49,32 @@ Friends
 <h2 class="ui centered header">All your friends</h2>
 <hr class="hr-divider">
 
-{% for friend in request.user.profile.friends.all %}
-    {{ friend }}
-{% endfor %}
+    <div class="ui five link cards">
+        {% if not request.user.profile.friends.all %}
+            <h2 class="ui header">No profiles here....</h2>
+        {% endif %}
+        {% for user_profile in request.user.profile.friends.all %}
+            <div class="ui card">
+                <a href="/profiles/{{ user_profile.profile.slug }}" class="image">
+                    <img  src="{{ user_profile.profile.avatar.url }}">
+                </a>
+                <div class="content">
+                  <a href="/profiles/{{ user_profile.profile.slug }}" class="header">{{ user_profile.profile.first_name }} {{ user_profile.profile.last_name }}</a>
+                  <div class="meta">
+                    <span class="date">{{ user_profile.country }}</span>
+                  </div>
+                </div>
+                <div class="extra content">
+                  <a>
+                    <i class="users icon"></i>
+                    2 friends
+                  </a>
+                </div>
+            </div>
+        {% endfor %}
+
+    </div>
+
 {% endblock content %}
 
 {% block scripts %}
