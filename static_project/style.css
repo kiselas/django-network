@@ -12,6 +12,25 @@ body {
     color: #000;
 }
 
+.nav-avatar {
+    border-radius: 1000px !important;
+    width: 35px;
+    margin-left: 8px !important;
+}
+
+.notification-icon {
+    color: #fff !important;
+    font-size: 28px !important;
+    line-height: 60px;
+    margin-right: 15px;
+}
+
+.notification-menu {
+    width: 400px !important;
+    margin-left: -200px !important;
+    display: block !important;
+}
+
 .avatar {
     width: 280px !important;
     margin-bottom: 20px;
@@ -171,4 +190,11 @@ img.friend-request {
 
 .profile-action-button {
     margin-bottom: 10px !important;
+}
+
+.close-profile-update {
+    top: 0 !important;
+    right: 0.5rem !important;
+    color: #000 !important;
+
 }

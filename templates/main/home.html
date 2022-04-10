@@ -6,24 +6,7 @@ home
 
 {% block content %}
 {% if not request.user.is_authenticated %}
-<form class="ui form" action="{% url 'login' %}" method="POST">
-    {% csrf_token %}
-  <div class="field">
-    <label>Username</label>
-    <input type="text" name="username" placeholder="username" required>
-  </div>
-  <div class="field">
-    <label>Password</label>
-    <input type="password" name="password" placeholder="password" required>
-  </div>
-  <div class="field">
-    <div class="ui checkbox">
-      <input type="checkbox" tabindex="0" class="hidden">
-      <label>I agree to the Terms and Conditions</label>
-    </div>
-  </div>
-  <button type="submit" value="Login" class="ui button">Submit</button>
-</form>
+    <meta http-equiv="refresh" content="0; url=/accounts/login/"/>
 {% else %}
     <meta http-equiv="refresh" content="0; url={% url 'profiles:profile-detail-view' slug=request.user.profile.slug %}"/>
 {% endif %}

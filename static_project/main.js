@@ -38,3 +38,4 @@ $('.doubling.cards .image').dimmer({
 });
 
 
+$('.notifications').dropdown();

@@ -7,63 +7,11 @@ from .forms import ProfileModelForm, PostModelForm, CommentModelForm
 from django.views.generic import UpdateView, DeleteView, ListView, DetailView
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
-def my_profile_view(request):
-    profile = Profile.objects.get(user=request.user)
-    posts = Post.objects.filter(page_id=profile.id)
-    confirm = False
-
-    # initials
-    profile_form = ProfileModelForm(instance=profile)
-    post_form = PostModelForm()
-    comment_form = CommentModelForm()
-    post_added = False
-
-    # validate and save forms profile, posts and comments
-    if 'submit_profile' in request.POST:
-        profile_form = ProfileModelForm(request.POST or None,
-                                        request.FILES or None,
-                                        instance=profile)
-        # profile form
-        if profile_form.is_valid():
-            profile_form.save()
-            confirm = True
-
-    if 'submit_post' in request.POST:
-        post_form = PostModelForm(request.POST, request.FILES)
-        page_id = request.POST.get('page_id')
-        if post_form.is_valid():
-            instance = post_form.save(commit=False)
-            instance.author = profile
-            instance.page_id = page_id
-            instance.save()
-            post_form = PostModelForm()
-            post_added = True
-
-    if 'submit_comment' in request.POST:
-        comment_form = CommentModelForm(request.POST)
-        print(profile.user.id)
-        if comment_form.is_valid():
-            instance = comment_form.save(commit=False)
-            instance.user = profile
-            instance.post = Post.objects.get(id=request.POST.get('post_id'))
-            instance.save()
-            comment_form = CommentModelForm()
-
-    context = {
-        'profile': profile,
-        'form': profile_form,
-        'confirm': confirm,
-        'posts': posts,
-        'post_added': post_added,
-        'post_form': post_form,
-        'comment_form': comment_form,
-    }
-
-    return render(request, 'profiles/myprofile.html', context)
-
-
+@login_required
 def like_unlike_post(request):
     user = request.user
     if request.method == 'POST':
@@ -91,6 +39,7 @@ def like_unlike_post(request):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
+@login_required
 def delete_update_post(request):
     user = request.user
     post_id = request.POST.get('post_id')
@@ -104,6 +53,7 @@ def delete_update_post(request):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
+@login_required
 def delete_update_comment(request):
     user = request.user
     comment_id = request.POST.get('comment_id')
@@ -126,7 +76,7 @@ def delete_update_comment(request):
     return redirect(request.META.get('HTTP_REFERER') + '#post-' + post_id)
 
 
-class PostDeleteView(DeleteView):
+class PostDeleteView(LoginRequiredMixin, DeleteView):
     model = Post
     template_name = 'posts/confirm_del.html'
     success_url = reverse_lazy('profiles:my-profile-view')
@@ -140,7 +90,7 @@ class PostDeleteView(DeleteView):
         return post
 
 
-class PostUpdateView(UpdateView):
+class PostUpdateView(LoginRequiredMixin, UpdateView):
     form_class = PostModelForm
     template_name = 'posts/update.html'
     success_url = reverse_lazy('profiles:my-profile-view')
@@ -154,6 +104,7 @@ class PostUpdateView(UpdateView):
             return super().form_invalid(form)
 
 
+@login_required
 def invites_received_view(request):
     profile = Profile.objects.get(user=request.user)
     friend_requests = Relationship.objects.invitations_received(profile)
@@ -163,8 +114,8 @@ def invites_received_view(request):
     return render(request, 'profiles/friends.html', context)
 
 
+@login_required
 def accept_reject_invitation(request):
-    print('We are in accept_reject_invitation')
     if request.method == 'POST':
         pk = request.POST.get('profile_pk')
         sender = Profile.objects.get(pk=pk)
@@ -181,6 +132,7 @@ def accept_reject_invitation(request):
         return redirect(request.META.get('HTTP_REFERER'))
 
 
+@login_required
 def profiles_list_view(request):
     user = request.user
     qs = Profile.objects.get_all_profiles(user)
@@ -190,18 +142,28 @@ def profiles_list_view(request):
     return render(request, 'profiles/profiles_list.html', context)
 
 
-class ProfileDetailView(DetailView):
+class ProfileDetailView(LoginRequiredMixin, DetailView):
     model = Profile
     template_name = 'profiles/user_profile.html'
     context_object_name = 'profile'
 
     def get_object(self):
         slug = self.kwargs.get('slug')
+        print('*'*100)
+        print(slug)
         profile = Profile.objects.get(slug=slug)
         return profile
 
     def post(self, request, *args, **kwargs):
         user = request.user
+        if 'submit_profile' in request.POST:
+            profile_form = ProfileModelForm(request.POST or None,
+                                            request.FILES or None,
+                                            instance=Profile.objects.get(user=user))
+            # profile form
+            if profile_form.is_valid():
+                profile_form.save()
+
         if 'submit_post' in request.POST:
             post_form = PostModelForm(request.POST, request.FILES)
             page_id = request.POST.get('page_id')
@@ -266,7 +228,7 @@ class ProfileDetailView(DetailView):
         return context
 
 
-class ProfileListView(ListView):
+class ProfileListView(LoginRequiredMixin, ListView):
     model = Profile
     template_name = 'profiles/profiles_list.html'
     context_object_name = 'qs'
@@ -296,6 +258,7 @@ class ProfileListView(ListView):
         return context
 
 
+@login_required
 def send_invitation(request):
     if request.method == 'POST':
         pk = request.POST.get('profile_pk')
@@ -311,6 +274,7 @@ def send_invitation(request):
     return redirect('profiles:my-profile-view')
 
 
+@login_required
 def remove_friend(request):
     if request.method == 'POST':
         pk = request.POST.get('profile_pk')

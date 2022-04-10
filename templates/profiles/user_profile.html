@@ -7,8 +7,12 @@
 
 {% block content %}
 <!-- Modal -->
-<div class="ui modal profile my-modal">
-  <i class="close icon"></i>
+<div class="ui modal profile my-modal
+    {% if not profile.first_name or not profile.last_name  %}
+    transition visible active
+    {% endif %}
+">
+  <i class="close icon close-profile-update"></i>
 <!--  <div class="header">-->
 <!--    Update your profile-->
 <!--  </div>-->
@@ -30,10 +34,17 @@
       Update
       <i class="checkmark icon"></i>
     </button>
-
   </div>
 </div>
-
+<!--Alert-Message -->
+{% if not profile.first_name or not profile.last_name  %}
+    <div class="ui message negative">
+        <i class="close icon"></i>
+        <div class="header">
+            Please set firstname and lastname to continue
+        </div>
+    </div>
+{% endif %}
 <!--Alert-Message -->
 {% if confirm %}
     <div class="ui message positive">

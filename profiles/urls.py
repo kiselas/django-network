@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import (my_profile_view, like_unlike_post,
+from .views import (like_unlike_post,
                     delete_update_comment, delete_update_post,
                     invites_received_view,
                     ProfileListView, ProfileDetailView,
@@ -10,7 +10,6 @@ from .views import (my_profile_view, like_unlike_post,
 app_name = 'profiles'
 
 urlpatterns = [
-    path('myprofile/', my_profile_view, name='my-profile-view'),
     path('liked/', like_unlike_post, name='like-post-view'),
     path('delete-update-comment/', delete_update_comment, name='delete-update-comment'),
     path('delete-update-post/', delete_update_post, name='delete-update-post'),

@@ -13,6 +13,7 @@
     {% if request.user.is_authenticated %}
     <a href="{{ my_profile }}" class="{% if request.path == my_profile %}active{% endif %} item">
         My profile
+        <img src="{{ avatar.url }}" class="nav-avatar">
     </a>
     <a href="{{friends}}" class="{% if request.path == friends %}active{% endif %} item">
         Friends
@@ -28,22 +29,36 @@
 
     <div class="right menu">
         {% if request.user.is_authenticated %}
+
              <div class="item">
-              <form action="" method="GET">
-                <div class="ui action left icon input">
-                <input class="prompt" type="text" name='q' placeholder="name of a friend...">
-                <i class="search icon"></i>
-                <button type='submit' class="ui button">Search</button>
-                </div>
-            </form>
+                <form action="" method="GET">
+                    <div class="ui action left icon input">
+                    <input class="prompt" type="text" name='q' placeholder="name of a friend...">
+                    <i class="search icon"></i>
+                    <button type='submit' class="ui button">Search</button>
+                    </div>
+                </form>
             </div>
 
-            <a class="ui item" onclick="document.getElementById('logout').submit()">
-                <i class="sign out alternate icon"></i>Logout</a>
-              <form action="{% url 'logout' %}" id="logout" method="POST">
-                {% csrf_token %}
-                <input type="hidden">
-              </form>
+             <div class="ui dropdown notifications">
+              <i class="bell icon notification-icon"></i>
+              <div class="menu notification-menu transition hidden">
+                <div class="item">
+                    {% if friend_req_count > 0 %}
+                    <b>Friend Requests ({{ friend_req_count }})</b>
+                    {% else %}
+                    Friend Requests ({{ friend_req_count }})
+                    {% endif %}
+                </div>
+                <div class="disabled item">New likes (0)</div>
+                <div class="item">New comments (0)</div>
+              </div>
+            </div>
+
+            <a class="ui item" href="{% url 'account_logout' %}">
+                <i class="sign out alternate icon"></i>Logout
+            </a>
+
         {% endif %}
     </div>
   </div>
