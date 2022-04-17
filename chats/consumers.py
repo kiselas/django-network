@@ -6,7 +6,7 @@ from django.contrib.humanize.templatetags.humanize import naturalday
 from django.utils import timezone
 from datetime import datetime
 from profiles.models import Profile
-from .models import PublicChatRoom
+from .models import PublicChatRoom, PublicRoomChatMessage
 from contextlib import suppress
 
 MSG_TYPE_MESSAGE = 0  # for standart messages
@@ -74,6 +74,7 @@ class PublicChatConsumer(AsyncJsonWebsocketConsumer):
                 raise ClientError("AUTH_ERROR", "You must be authenticated")
 
             room = await get_room_or_error(room_id)
+            await create_public_chat_room_message(room, self.scope['user'], message)
             profile = await self._get_user_profile(self.scope['user'])
             await self.channel_layer.group_send(
                 room.group_name,
@@ -180,6 +181,11 @@ def is_authenticated(user):
     if user.is_authenticated:
         return True
     return False
+
+
+@database_sync_to_async
+def create_public_chat_room_message(room, user, message):
+    return PublicRoomChatMessage.objects.create(user=user, room=room, content=message)
 
 
 @database_sync_to_async
