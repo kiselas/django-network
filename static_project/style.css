@@ -257,8 +257,15 @@ img.friend-request {
 
 }
 
-.chat-info-icon {
+.chat-info-icon-red {
     color: #c90000;
+    font-size: 37px !important;
+    float: left;
+    line-height: 50px;
+}
+
+.chat-info-icon-black {
+    color: #000;
     font-size: 37px !important;
     float: left;
     line-height: 50px;

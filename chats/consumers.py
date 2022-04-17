@@ -125,7 +125,7 @@ class PublicChatConsumer(AsyncJsonWebsocketConsumer):
                 await connect_user(room, self.scope['user'])
 
                 self.room_id = room.id
-
+                profile = await self._get_user_profile(self.scope['user'])
                 # Add to the group so they get room messages
                 await self.channel_layer.group_add(
                     room.group_name,
@@ -133,7 +133,8 @@ class PublicChatConsumer(AsyncJsonWebsocketConsumer):
                 )
                 await self.send_json({
                     "join": str(room.id),
-                    "username": self.scope['user'].username
+                    "username": self.scope['user'].username,
+                    "profile_slug": profile.slug
                 })
             except ClientError as e:
                 await self.handle_client_error(e)

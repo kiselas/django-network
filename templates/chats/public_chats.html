@@ -74,6 +74,9 @@ Friends
             if(data.error){
               showClientErrorModal(data.message)
             }
+            if(data.join){
+              showClientJoinMessage(data.username, data.profile_slug)
+            }
             if(data.msg_type == 0){
               appendChatMessage(data)
             }
@@ -164,18 +167,19 @@ Friends
         <div class="text">
           ${msg}
         </div>
-      </div>
-    </div>`;
-    // после обновления HTML сбрасываются EventListener, каждый раз вешаем заново
-    chat_container.scrollTop = chat_container.scrollHeight
-    document.getElementById("id_chat_message_submit").addEventListener("click", sendMessageToSocket);
-    document.getElementById("id_chat_message_input").addEventListener("keyup", sendMessageOnEnterToSocket);
+      </div>`;
+      chat_container.scrollTop = chat_container.scrollHeight
+
+      // после обновления HTML сбрасываются EventListener, каждый раз вешаем заново
+      // document.getElementById("id_chat_message_submit").addEventListener("click", sendMessageToSocket);
+      //document.getElementById("id_chat_message_input").addEventListener("keyup", sendMessageOnEnterToSocket);
     }
+
     function showClientErrorModal(msg){
       chat_container = document.getElementsByClassName('chat-messages')[0]
       chat_container.innerHTML += `<div class="chat-message chat-info"> \
       <a class="chat-avatar">
-        <i class="info circle icon chat-info-icon"></i>
+        <i class="info circle icon chat-info-icon-red"></i>
       </a>
       <div class="content">
         <a href='#' class="author">Error</a>
@@ -185,25 +189,37 @@ Friends
         <div class="text">
           ${msg}
         </div>
-      </div>
-    </div>`;
-    chat_container.scrollTop = chat_container.scrollHeight
+      </div>`;
+      chat_container.scrollTop = chat_container.scrollHeight
 
-    // после обновления HTML сбрасываются EventListener, каждый раз вешаем заново
-    document.getElementById("id_chat_message_submit").addEventListener("click", sendMessageToSocket);
-    document.getElementById("id_chat_message_input").addEventListener("keyup", sendMessageOnEnterToSocket);
-
-    // скрытие ошибки через 2 секунды
-    function fadeOut()
-    {
-        $(".chat-info").fadeToggle(500, "swing",function(){
-            this.remove();
-        });
+      // скрытие ошибки через 2 секунды
+      function fadeOut()
+      {
+          $(".chat-info").fadeToggle(500, "swing",function(){
+              this.remove();
+          });
+      }
+      var delay = 2000;
+      setTimeout(fadeOut, delay);
     }
-    var delay = 2000;
-    setTimeout(fadeOut, delay);
 
-}
+    function showClientJoinMessage(username, profile_slug){
+      chat_container = document.getElementsByClassName('chat-messages')[0]
+      chat_container.innerHTML += `<div class="chat-message chat-info"> \
+      <a class="chat-avatar">
+        <i class="comment alternate icon chat-info-icon-black"></i>
+      </a>
+      <div class="content">
+        <a href='/profiles/${profile_slug}' class="author">Chat info</a>
+        <div class="metadata">
+          <span class="date"><p><a href="/profiles/${profile_slug}">${username}</a> joined to chat</p></span>
+        </div>
+        <div class="text">
+
+        </div>
+      </div>`;
+      chat_container.scrollTop = chat_container.scrollHeight
+    }
 }
 
 
