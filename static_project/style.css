@@ -198,3 +198,82 @@ img.friend-request {
     color: #000 !important;
 
 }
+
+.chat-message {
+    text-align: left !important;
+}
+
+.chat-avatar img{
+    width: 50px;
+    float: left;
+    border-radius: 1000px;
+    margin-right: 20px;
+}
+
+.chat-container {
+  position: relative;
+  padding-bottom: 40px !important;
+  padding-right:20px;
+  min-height: 600px;
+}
+
+.chat-message {
+    padding-bottom: 10px !important;
+}
+
+.chat-message .content {
+    margin-left: 70px !important;
+}
+
+.chat-message .metadata {
+    color: #858585;
+}
+
+.chat-message .author {
+    font-weight: 700;
+}
+
+.chat-form {
+  position: absolute !important;
+  bottom: 10px;
+  width: 96%;
+}
+
+.chat-form .text {
+
+}
+
+.chat-form button {
+    width: 100% !important;
+    margin-top: 15px !important;
+}
+
+.chat-form textarea {
+    height: 70px !important;
+    min-height: 70px !important;
+}
+
+#id_chat_message_submit {
+
+}
+
+.chat-info-icon {
+    color: #c90000;
+    font-size: 37px !important;
+    float: left;
+    line-height: 50px;
+}
+
+.chat-info {
+    opacity: 1;
+    transition: opacity 1s;
+}
+
+.chat-info-fadeout {
+  opacity: 0;
+}
+
+.chat-messages {
+    overflow-x: auto !important;
+    height: 400px !important;
+}

@@ -41,12 +41,15 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.sites',
 
+    'channels',
+
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
 
     'posts',
     'profiles',
+    'chats',
 ]
 
 SITE_ID = 1
@@ -97,6 +100,17 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 WSGI_APPLICATION = 'bffbook.wsgi.application'
+
+ASGI_APPLICATION = 'bffbook.routing.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 
 # Database

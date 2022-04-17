@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 from .views import home_view, logout, login
+from chats.views import public_chats_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,6 +28,7 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('login', login, name='login'),
     path('logout', logout, name='logout'),
+    path('chats/', public_chats_view, name='chats')
     # path('posts/', include('posts.urls',  namespace='posts'))
 ]
 
