@@ -284,3 +284,7 @@ img.friend-request {
     overflow-x: auto !important;
     height: 400px !important;
 }
+
+.d-none {
+    display: none !important;
+}

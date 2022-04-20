@@ -1,4 +1,8 @@
-import timestamp as timestamp
+import json
+
+from django.core.serializers.python import Serializer
+from django.core.paginator import Paginator
+from django.core.serializers import serialize
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.auth import get_user_model
@@ -10,6 +14,7 @@ from .models import PublicChatRoom, PublicRoomChatMessage
 from contextlib import suppress
 
 MSG_TYPE_MESSAGE = 0  # for standart messages
+DEFAULT_NUM_MESSAGES = 10
 
 User = get_user_model()
 
@@ -52,6 +57,16 @@ class PublicChatConsumer(AsyncJsonWebsocketConsumer):
                 await self.join_room(content['room_id'])
             elif command == "leave":
                 await self.leave_room(content['room_id'])
+            elif command == "get_room_chat_messages":
+                room = await get_room_or_error(content['room_id'])
+                payload = await get_room_chat_messages(room, content['page_number'])
+                if payload:
+                    payload = json.loads(payload)
+                    await self.send_messages_payload(payload['messages'],
+                                                     payload['new_page_number'])
+                else:
+                    raise ClientError(404, "Something went wrong retrieving messages")
+
         except ClientError as e:
             errorData = {}
             errorData['error'] = e.code
@@ -162,6 +177,20 @@ class PublicChatConsumer(AsyncJsonWebsocketConsumer):
         except ClientError as e:
             await self.handle_client_error(e)
 
+    async def send_messages_payload(self, messages, new_page_number):
+        """
+        Sends a payload of messages to the UI
+        :param messages:
+        :param new_page_number:
+        :return:
+        """
+        print('PublicChatConsumer: send_messages_payload')
+        await self.send_json({
+            "messages_payload": "messages_paylpad",
+            "messages": messages,
+            "new_page_number": new_page_number
+        })
+
     async def handle_client_error(self, e):
         """
         Called when a ClientError is raised when
@@ -223,3 +252,38 @@ def calculate_timestamp(timestamp):
     else:
         ts = f'{datetime.strftime(timestamp, "%m/%d/%Y")}'
     return ts
+
+
+@database_sync_to_async
+def get_room_chat_messages(room, page_number):
+    try:
+        qs = PublicRoomChatMessage.objects.by_room(room)
+        p = Paginator(qs, DEFAULT_NUM_MESSAGES)
+        payload = {}
+        new_page_number = int(page_number)
+        if new_page_number <= p.num_pages:
+            new_page_number += 1
+            s = LazyRoomChatMessageEncoder()
+            payload['messages'] = s.serialize(p.page(page_number).object_list)
+        else:
+            payload['messages'] = None
+        payload['new_page_number'] = new_page_number
+        return json.dumps(payload)
+    except Exception as e:
+        print("Exception: " + str(e))
+
+
+class LazyRoomChatMessageEncoder(Serializer):
+    def get_dump_object(self, obj):
+        profile = Profile.objects.get(user=obj.user)
+
+        dump_object = {}
+        dump_object.update({'msg_type': MSG_TYPE_MESSAGE,
+                            'user_id': obj.user.id,
+                            'username': obj.user.username,
+                            'message': obj.content,
+                            "profile_image": profile.avatar.url,
+                            "profile_slug": profile.slug,
+                            'timestamp': calculate_timestamp(obj.timestamp),
+                            })
+        return dump_object

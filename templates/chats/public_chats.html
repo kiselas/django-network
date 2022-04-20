@@ -2,43 +2,16 @@
 {% load humanize %}
 
 {% block title %}
-Friends
+Public Chat
 {% endblock title %}
 
 {% block content %}
+<span class="{% if not debug_mode %} d-none {% endif %}page-number" id="chat_page_number">1</span>
 <div class="ui container center aligned row grid">
   <div class="ui chat-container ten wide column segment aligned">
     <h3 class="ui dividing header">Comments</h3>
     <div class="chat-messages">
-      <div class="chat-message">
-        <a class="chat-avatar">
-          <img src="/media/avatars/6066341416.jpg">
-        </a>
-        <div class="content">
-          <a class="author">Matt Mattov</a>
-          <div class="metadata">
-            <span class="date">Today at 5:42PM</span>
-          </div>
-          <div class="text">
-            How artistic! How artistic! How artistic! How artistic!
-          </div>
-        </div>
-      </div>
-      <div class="chat-message">
-        <a class="chat-avatar">
-          <img src="/media/avatars/6066341416.jpg">
-        </a>
-        <div class="content">
-          <a class="author">Matt Mattov</a>
-          <div class="metadata">
-            <span class="date">Today at 5:42PM</span>
-          </div>
-          <div class="text">
-            How artistic! How artistic! How artistic! How artistic!
-          </div>
-        </div>
-      </div>
-    </div>
+
     <div class="ui reply form chat-form">
       <div class="text">
         <textarea id="id_chat_message_input"></textarea>
@@ -55,106 +28,157 @@ Friends
 {% block scripts %}
 <script type="text/javascript">
 
-    setupPublicChatWebSocket()
+    var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+    {% if debug_mode %}
+        var ws_path = ws_scheme + "://" + window.location.host + "/public_chats/{{room_id}}/"
 
-    function setupPublicChatWebSocket(){
-        var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
-        {% if debug_mode %}
-            var ws_path = ws_scheme + "://" + window.location.host + "/public_chats/{{room_id}}/"
+    {% else %}
+        var ws_path = ws_scheme + "://" + window.location.host + "8001/public_chats/{{room_id}}/"
+    {% endif %}
 
-        {% else %}
-            var ws_path = ws_scheme + "://" + window.location.host + "8001/public_chats/{{room_id}}/"
-        {% endif %}
+    var public_chat_socket = new WebSocket(ws_path)
 
-        var public_chat_socket = new WebSocket(ws_path)
-
-        public_chat_socket.onmessage = function(message){
-            console.log("Got chat websocket message: " + message.data)
-            var data = JSON.parse(message.data)
-            if(data.error){
-              showClientErrorModal(data.message)
-            }
-            if(data.join){
-              showClientJoinMessage(data.username, data.profile_slug)
-            }
-            if(data.msg_type == 0){
-              appendChatMessage(data)
-            }
-
+    public_chat_socket.onmessage = function(message){
+        console.log("Got chat websocket message: " + message.data)
+        var data = JSON.parse(message.data)
+        if(data.error){
+          showClientErrorModal(data.message)
         }
-
-        public_chat_socket.addEventListener("open", function(e){
-            console.log("Public Chat Socket OPEN")
-            if("{{ request.user.is_authenticated }}"){
-              public_chat_socket.send(JSON.stringify
-                ({
-                  "command": "join",
-                  "room_id": "{{ room_id }}"
-                })
-              )
-            }
-        })
-
-        public_chat_socket.onclose = function(e){
-            console.log("Public Chat Socket CLOSED" )
-             if("{{ request.user.is_authenticated }}"){
-              public_chat_socket.send(JSON.stringify
-                ({
-                  "command": "leave",
-                  "room_id": "{{ room_id }}"
-                })
-              )
-            }
+        if(data.join){
+          getRoomChatMessages();
+          chat_container = document.getElementsByClassName('chat-messages')[0]
         }
-
-        public_chat_socket.onopen = function(e){
-            console.log("Public Chat Socket: onOpen")
+        if(data.msg_type == 0){
+          appendChatMessage(data, false, true)
         }
-
-        public_chat_socket.onerror = function(e){
-            console.log("Public Chat Socket: onError " + e)
-        }
-
-        if(public_chat_socket.readyState == WebSocket.OPEN){
-            console.log("Public Chat Socket OPEN")
-        }
-        else if(public_chat_socket.readyState == WebSocket.CONNECTING){
-             console.log("Public Chat Socket CONNECTING...")
-        }
-        document.getElementById("id_chat_message_input").focus()
-
-        function sendMessageOnEnterToSocket(e) {
-          if(e.keyCode == 13 && !e.shiftKey){
-            document.getElementById("id_chat_message_submit").click()
+        if (data.messages_payload){
+          console.log("PAYLOAD");
+          handleMessagesPayload(data.messages, data.new_page_number);
+          if(data.new_page_number == 2){
+              chat_container = document.getElementsByClassName('chat-messages')[0]
+              chat_container.scrollTop = chat_container.scrollHeight
           }
         }
 
-        document.getElementById("id_chat_message_submit").addEventListener("click", sendMessageToSocket);
-        document.getElementById("id_chat_message_input").addEventListener("keyup", sendMessageOnEnterToSocket);
+    }
 
-        function sendMessageToSocket(e) {
-          const messageInputDom = document.getElementById("id_chat_message_input")
-          const message = messageInputDom.value
-          public_chat_socket.send(JSON.stringify({
-            "command": "send",
-            "message": message,
-            "room_id": "{{ room_id }}"
-          }))
-          messageInputDom.value = ""
+    public_chat_socket.addEventListener("open", function(e){
+        console.log("Public Chat Socket OPEN")
+        if("{{ request.user.is_authenticated }}"){
+          public_chat_socket.send(JSON.stringify
+            ({
+              "command": "join",
+              "room_id": "{{ room_id }}"
+            })
+          )
         }
+    })
 
-    function appendChatMessage(data){
+    public_chat_socket.onclose = function(e){
+        console.log("Public Chat Socket CLOSED" )
+         if("{{ request.user.is_authenticated }}"){
+          public_chat_socket.send(JSON.stringify
+            ({
+              "command": "leave",
+              "room_id": "{{ room_id }}"
+            })
+          )
+        }
+    }
+
+    public_chat_socket.onopen = function(e){
+        console.log("Public Chat Socket: onOpen")
+    }
+
+    public_chat_socket.onerror = function(e){
+        console.log("Public Chat Socket: onError " + e)
+    }
+
+    if(public_chat_socket.readyState == WebSocket.OPEN){
+        console.log("Public Chat Socket OPEN")
+    }
+    else if(public_chat_socket.readyState == WebSocket.CONNECTING){
+         console.log("Public Chat Socket CONNECTING...")
+    }
+    document.getElementById("id_chat_message_input").focus()
+
+    function sendMessageOnEnterToSocket(e) {
+      if(e.keyCode == 13 && !e.shiftKey){
+        document.getElementById("id_chat_message_submit").click()
+      }
+    }
+
+    document.getElementById("id_chat_message_submit").addEventListener("click", sendMessageToSocket);
+    document.getElementById("id_chat_message_input").addEventListener("keyup", sendMessageOnEnterToSocket);
+
+    function sendMessageToSocket(e) {
+      const messageInputDom = document.getElementById("id_chat_message_input")
+      const message = messageInputDom.value
+      public_chat_socket.send(JSON.stringify({
+        "command": "send",
+        "message": message,
+        "room_id": "{{ room_id }}"
+      }))
+      messageInputDom.value = ""
+    }
+
+    function setPageNumber(pageNumber){
+      document.getElementById("chat_page_number").innerHTML = pageNumber;
+    }
+
+
+    // когда больше не осталось страниц либо страница в процессе загрузки
+    function setPageNumLast(){
+      setPageNumber("-1");
+    }
+
+    function getRoomChatMessages(){
+      var pageNumber = document.getElementById("chat_page_number").innerHTML
+      if(pageNumber != "-1"){
+          setPageNumLast();
+          public_chat_socket.send(JSON.stringify({
+              "command": "get_room_chat_messages",
+              "room_id": "{{ room_id }}",
+              "page_number": pageNumber
+          }))
+      }
+    }
+
+    function handleMessagesPayload(messages, new_page_number){
+      if (messages != null  && messages != "undefined" && messages != "None"){
+        setPageNumber(new_page_number)
+        messages.forEach(function(message){
+            appendChatMessage(message, true, false)
+        })
+      }
+      else{
+          setPageNumLast()
+      }
+    }
+
+    var chatContainer = document.getElementsByClassName("chat-messages")[0]
+    chatContainer.addEventListener("scroll", function(e){
+        if (chatContainer.scrollTop < 30){
+            getRoomChatMessages();
+        }
+    })
+
+    function appendChatMessage(data, maintainPosition, isNewMessage){
       profile_image = data['profile_image']
       username = data['username']
       user_id = data['user_id']
       msg = data['message']
       timestamp = data['timestamp']
       profile_slug = data['profile_slug']
-      createChatMessageElement(profile_image, username, user_id, msg, profile_slug)
+      createChatMessageElement(profile_image, username,
+                                user_id, msg, profile_slug,
+                                maintainPosition, isNewMessage)
     }
 
-    function createChatMessageElement(profile_image, username, user_id, msg, profile_slug){
+    function createChatMessageElement(profile_image, username, user_id, msg,
+                                      profile_slug, maintainPosition, isNewMessage){
       chat_container = document.getElementsByClassName('chat-messages')[0]
+      if(isNewMessage){
       chat_container.innerHTML += `<div class="chat-message"> \
       <a class="chat-avatar">
         <img src="${profile_image}">
@@ -168,11 +192,36 @@ Friends
           ${msg}
         </div>
       </div>`;
-      chat_container.scrollTop = chat_container.scrollHeight
+      }
+      else{
+      var msgDiv = document.createElement('div');
+      msgDiv.classList.add("chat-message");
+      msgDiv.innerHTML += `<a class="chat-avatar">
+        <img src="${profile_image}">
+      </a>
+      <div class="content">
+        <a href='/profiles/${profile_slug}' class="author">${username}</a>
+        <div class="metadata">
+          <span class="date">${timestamp}</span>
+        </div>
+        <div class="text">
+          ${msg}
+        </div>`;
+        chat_container.insertBefore(msgDiv, chat_container.firstChild);
+      }
+
+      if(maintainPosition){
+          let posScroll = chat_container.scrollTop;
+          console.log(posScroll)
+          chat_container.scrollTop =  posScroll
+      }
+      else{
+          chat_container.scrollTop = chat_container.scrollHeight
+      }
 
       // после обновления HTML сбрасываются EventListener, каждый раз вешаем заново
-      // document.getElementById("id_chat_message_submit").addEventListener("click", sendMessageToSocket);
-      //document.getElementById("id_chat_message_input").addEventListener("keyup", sendMessageOnEnterToSocket);
+      document.getElementById("id_chat_message_submit").addEventListener("click", sendMessageToSocket);
+      document.getElementById("id_chat_message_input").addEventListener("keyup", sendMessageOnEnterToSocket);
     }
 
     function showClientErrorModal(msg){
@@ -220,7 +269,6 @@ Friends
       </div>`;
       chat_container.scrollTop = chat_container.scrollHeight
     }
-}
 
 
 
