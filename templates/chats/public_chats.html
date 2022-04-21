@@ -9,9 +9,11 @@ Public Chat
 <span class="{% if not debug_mode %} d-none {% endif %}page-number" id="chat_page_number">1</span>
 <div class="ui container center aligned row grid">
   <div class="ui chat-container ten wide column segment aligned">
-    <h3 class="ui dividing header">Comments</h3>
-    <div class="chat-messages">
+    <h3 class="ui dividing header">Public Chat</h3>
 
+    <div class="chat-messages ">
+      <div class="ui loader" id="loading_spinner"></div>
+      <!-- Messages display here -->
     <div class="ui reply form chat-form">
       <div class="text">
         <textarea id="id_chat_message_input"></textarea>
@@ -28,7 +30,7 @@ Public Chat
 {% block scripts %}
 <script type="text/javascript">
 
-    var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+    var ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
     {% if debug_mode %}
         var ws_path = ws_scheme + "://" + window.location.host + "/public_chats/{{room_id}}/"
 
@@ -40,7 +42,11 @@ Public Chat
 
     public_chat_socket.onmessage = function(message){
         console.log("Got chat websocket message: " + message.data)
+
         var data = JSON.parse(message.data)
+
+        displayChatroomLoadingSpinner(data.display_progress_bar)
+
         if(data.error){
           showClientErrorModal(data.message)
         }
@@ -48,13 +54,13 @@ Public Chat
           getRoomChatMessages();
           chat_container = document.getElementsByClassName('chat-messages')[0]
         }
-        if(data.msg_type == 0){
+        if(data.msg_type === 0){
           appendChatMessage(data, false, true)
         }
         if (data.messages_payload){
           console.log("PAYLOAD");
           handleMessagesPayload(data.messages, data.new_page_number);
-          if(data.new_page_number == 2){
+          if(data.new_page_number === 2){
               chat_container = document.getElementsByClassName('chat-messages')[0]
               chat_container.scrollTop = chat_container.scrollHeight
           }
@@ -94,16 +100,16 @@ Public Chat
         console.log("Public Chat Socket: onError " + e)
     }
 
-    if(public_chat_socket.readyState == WebSocket.OPEN){
+    if(public_chat_socket.readyState === WebSocket.OPEN){
         console.log("Public Chat Socket OPEN")
     }
-    else if(public_chat_socket.readyState == WebSocket.CONNECTING){
+    else if(public_chat_socket.readyState === WebSocket.CONNECTING){
          console.log("Public Chat Socket CONNECTING...")
     }
     document.getElementById("id_chat_message_input").focus()
 
     function sendMessageOnEnterToSocket(e) {
-      if(e.keyCode == 13 && !e.shiftKey){
+      if(e.keyCode === 13 && !e.shiftKey){
         document.getElementById("id_chat_message_submit").click()
       }
     }
@@ -120,6 +126,16 @@ Public Chat
         "room_id": "{{ room_id }}"
       }))
       messageInputDom.value = ""
+    }
+
+    function displayChatroomLoadingSpinner(isDisplayed){
+      var spinner = document.getElementById('loading_spinner')
+      if(isDisplayed){
+        spinner.classList.add('active');
+      }
+      else {
+        spinner.classList.remove('active');
+      }
     }
 
     function setPageNumber(pageNumber){
