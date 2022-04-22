@@ -14,6 +14,7 @@ from .models import PublicChatRoom, PublicRoomChatMessage
 from contextlib import suppress
 
 MSG_TYPE_MESSAGE = 0  # for standart messages
+MSG_TYPE_CONNECTED_USERS = 1 # for sending the connected users
 DEFAULT_NUM_MESSAGES = 10
 
 User = get_user_model()
@@ -155,6 +156,16 @@ class PublicChatConsumer(AsyncJsonWebsocketConsumer):
                     "username": self.scope['user'].username,
                     "profile_slug": profile.slug
                 })
+
+                # send connected users for displaying in UI
+                connected_users_data = await get_connected_users(room)
+                await self.channel_layer.group_send(
+                    room.group_name,
+                    {
+                        'type': 'connected.users',
+                        'connected_users': connected_users_data
+                    }
+                )
             except ClientError as e:
                 await self.handle_client_error(e)
 
@@ -176,6 +187,17 @@ class PublicChatConsumer(AsyncJsonWebsocketConsumer):
             await self.channel_layer.group_discard(
                 room.group_name,
                 self.channel_name
+            )
+
+            # send connected users for displaying in UI
+            connected_users_data = await get_connected_users(room)
+            print(connected_users_data)
+            await self.channel_layer.group_send(
+                room.group_name,
+                {
+                    'type': 'connected.users',
+                    'connected_users': connected_users_data
+                }
             )
         except ClientError as e:
             await self.handle_client_error(e)
@@ -221,6 +243,32 @@ class PublicChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({
             'display_progress_bar': is_displayed
         })
+
+    async def connected_users(self, event):
+        """
+        Called to send connected users to the room.
+        This data used to display users profiles and number of users in the room
+        :param event:
+        :return:
+        """
+        await self.send_json({
+            "msg_type": MSG_TYPE_CONNECTED_USERS,
+            "connected_users": event['connected_users']
+        })
+
+
+@database_sync_to_async
+def get_connected_users(room):
+    if room.users:
+        users = room.users.all()
+        data = {}
+        for user in users:
+            profile = Profile.objects.get(user=user)
+            data[str(user.id)] = {'username': user.username,
+                             'profile_image': profile.avatar.url,
+                             'profile_slug': profile.slug}
+        return data
+    return None
 
 
 def is_authenticated(user):
