@@ -37,5 +37,4 @@ $('.doubling.cards .image').dimmer({
   on: 'hover'
 });
 
-
 $('.notifications').dropdown();
