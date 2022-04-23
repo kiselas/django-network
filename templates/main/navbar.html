@@ -1,8 +1,9 @@
-<!--{% url 'home-view' as path_to_home %}-->
+<!--{% url 'home_view' as path_to_home %}-->
 <!--{% url 'posts:main-post-view' as path_to_posts %}-->
 <!--{% url 'profiles:my-profile-view' as path_to_my_profile %}-->
 <!--{% url 'profiles:my-invites-view' as path_to_my_invites %}-->
 <!--{% url 'profiles:friends' as friends %}-->
+<!--{% url 'chats' as chats %}-->
 <!--{% url 'profiles:all-profiles-view' as all_profiles %}-->
 <!--{% url 'profiles:profile-detail-view' slug=request.user.profile.slug as my_profile %}-->
 <div class="ui inverted menu nav mb-7">
@@ -18,8 +19,8 @@
     <a href="{{friends}}" class="{% if request.path == friends %}active{% endif %} item">
         Friends
     </a>
-    <a href="{{all_profiles}}" class="{% if request.path == all_profiles %}active{% endif %} item">
-        Messages
+    <a href="{{chats}}" class="{% if request.path == chats %}active{% endif %} item">
+        Public chat
     </a>
     <a href="{{all_profiles}}" class="{% if request.path == all_profiles %}active{% endif %} item">
         All profiles

@@ -4,8 +4,8 @@ body {
 
 .nav {
     border-radius: 0 !important;
-    padding 0 0 10px 0 !important;
-    margin-top: 0px !important;
+    padding: 0 0 10px 0 !important;
+    margin-top: 0 !important;
 }
 .nav .item.active {
     background: #e0e1e2 none;
@@ -198,6 +198,7 @@ img.friend-request {
     color: #000 !important;
 
 }
+/* Chat styles */
 
 .chat-message {
     text-align: left !important;
@@ -257,8 +258,15 @@ img.friend-request {
 
 }
 
-.chat-info-icon {
+.chat-info-icon-red {
     color: #c90000;
+    font-size: 37px !important;
+    float: left;
+    line-height: 50px;
+}
+
+.chat-info-icon-black {
+    color: #000;
     font-size: 37px !important;
     float: left;
     line-height: 50px;
@@ -276,4 +284,24 @@ img.friend-request {
 .chat-messages {
     overflow-x: auto !important;
     height: 400px !important;
+}
+
+.d-none {
+    display: none !important;
+}
+
+.users-in-room {
+    position: absolute;
+    right: 45px;
+    top: 25px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.users-in-room-cards {
+    padding: 30px;
+}
+
+.users-in-room-cards img{
+    min-height: 130px;
 }
