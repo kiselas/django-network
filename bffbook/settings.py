@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'posts',
     'profiles',
     'chats',
+    'private_chats',
 ]
 
 SITE_ID = 1

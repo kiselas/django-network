@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load static %}
+{% block head %}
+<script type="text/javascript" src="{% static 'chat.js' %}"></script>
+{% endblock head %}
+
+{% block title %}Public Chat{% endblock title %}
+
+{% block content %}
+<span class="{% if not debug_mode %} d-none {% endif %}page-number" id="chat_page_number">1</span>
+<div class="ui container center aligned row grid">
+  <div class="ui chat-container six wide column segment aligned chat-dialogs">
+    <h3 class="ui dividing header">Chat List</h3>
+    <div class="ui divided items">
+      <div class="item chat-with-user">
+        <div class="ui tiny image">
+          <img src="/media/avatars/6066341416.jpg">
+        </div>
+        <div class="content">
+          <div class="header"><a href="#">Username</a></div>
+          <div class="description">
+            <p>Last message in the chat Last message in the chat Last message in the chat </p>
+          </div>
+        </div>
+      </div>
+      <div class="item chat-with-user">
+        <div class="ui tiny image">
+          <img src="/media/avatars/6066341416.jpg">
+        </div>
+        <div class="content">
+          <div class="header"><a href="#">Username</a></div>
+          <div class="description">
+            <p>Last message in the chat Last message in the chat Last message in the chat </p>
+          </div>
+        </div>
+      </div>
+      <div class="item chat-with-user">
+        <div class="ui tiny image">
+          <img src="/media/avatars/6066341416.jpg">
+        </div>
+        <div class="content">
+          <div class="header"><a href="#">Username</a></div>
+          <div class="description">
+            <p>Last message in the chat Last message in the chat Last message in the chat </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="ui chat-container ten wide column segment aligned">
+    <h3 class="ui dividing header">Public Chat</h3>
+    <a class="users-in-room"><span id="users-counter">1</span> <i class="user icon"
+                                  onclick="$('.users-in-room-modal').modal('show');"></i></a>
+    <div class="ui modal users-in-room-modal">
+      <i class="close icon"></i>
+      <div class="ui six cards users-in-room-cards">
+        <a href="" class="black card">
+          <div class="image">
+            <img src="/media/avatars/6066341416.jpg">
+            <p>Username</p>
+          </div>
+        </a>
+      </div>
+      </div>
+    <div class="chat-messages ">
+      <div class="ui loader" id="loading_spinner"></div>
+      <!-- Messages display here -->
+    <div class="ui reply form chat-form">
+      <div class="text">
+        <textarea id="id_chat_message_input"></textarea>
+      </div>
+      <button type="button" class="ui blue labeled submit icon button" id="id_chat_message_submit">
+        <i class="icon edit"></i> Send
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<!-- markdown-it  -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/13.0.0/markdown-it.min.js"
+        integrity="sha512-A1dmQlsxp9NpT1ON0E7waXFEX7PXtlOlotHtSvdchehjLxBaVO5itVj8Z5e2aCxI0n02hqM1WoDTRRh36c5PuA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+<!--init highlight js -->
+<script>hljs.highlightAll();</script>
+<script>
+  function validateText(str){
+    let md = window.markdownit({
+        highlight: function (str, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          try {
+            return '<pre class="hljs"><code>' +
+                   hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+                   '</code></pre>';
+          } catch (__) {}
+        }
+
+        return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+        },
+        linkify: true,
+        });
+        return md.render(str);
+}
+</script>
+<script type="text/javascript">
+      // define websocket for initPublicChat
+      let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+      {% if debug_mode %}
+      let ws_path = ws_scheme + "://" + window.location.host + "/public_chats/{{room_id}}/"
+
+      {% else %}
+      let ws_path = ws_scheme + "://" + window.location.host + "8001/public_chats/{{room_id}}/"
+      {% endif %}
+    initPublicChat(ws_path, "{{ room_id }}", "{{ request.user.is_authenticated }}")
+</script>
+{% endblock scripts %}
