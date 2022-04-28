@@ -289,3 +289,4 @@ function initPublicChat(ws_path, room_id, is_auth) {
       }
 
     }
+    

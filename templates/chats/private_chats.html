@@ -13,43 +13,24 @@
   <div class="ui chat-container six wide column segment aligned chat-dialogs">
     <h3 class="ui dividing header">Chat List</h3>
     <div class="ui divided items">
-      <div class="item chat-with-user">
-        <div class="ui tiny image">
-          <img src="/media/avatars/6066341416.jpg">
-        </div>
-        <div class="content">
-          <div class="header"><a href="#">Username</a></div>
-          <div class="description">
-            <p>Last message in the chat Last message in the chat Last message in the chat </p>
+      {% for x in m_and_f %}
+        <div class="item chat-with-user" onclick="onSelectFriend('{{ x.friend.id }}')"
+             id="id_friend_container_{{x.friend.id}}">
+          <div class="ui tiny image">
+            <img src="{{ x.friend.avatar.url }}">
+          </div>
+          <div class="content">
+            <div class="header"><a href="#">{{ x.friend.first_name }} {{ x.friend.last_name }}</a></div>
+            <div class="description">
+              <p>{{ x.message }}</p>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="item chat-with-user">
-        <div class="ui tiny image">
-          <img src="/media/avatars/6066341416.jpg">
-        </div>
-        <div class="content">
-          <div class="header"><a href="#">Username</a></div>
-          <div class="description">
-            <p>Last message in the chat Last message in the chat Last message in the chat </p>
-          </div>
-        </div>
-      </div>
-      <div class="item chat-with-user">
-        <div class="ui tiny image">
-          <img src="/media/avatars/6066341416.jpg">
-        </div>
-        <div class="content">
-          <div class="header"><a href="#">Username</a></div>
-          <div class="description">
-            <p>Last message in the chat Last message in the chat Last message in the chat </p>
-          </div>
-        </div>
-      </div>
+      {% endfor  %}
     </div>
   </div>
   <div class="ui chat-container ten wide column segment aligned">
-    <h3 class="ui dividing header">Public Chat</h3>
+    <h3 class="ui dividing header" id="other_user_fullname">Public Chat</h3>
     <a class="users-in-room"><span id="users-counter">1</span> <i class="user icon"
                                   onclick="$('.users-in-room-modal').modal('show');"></i></a>
     <div class="ui modal users-in-room-modal">
@@ -108,14 +89,161 @@
 }
 </script>
 <script type="text/javascript">
-      // define websocket for initPublicChat
-      let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
-      {% if debug_mode %}
-      let ws_path = ws_scheme + "://" + window.location.host + "/public_chats/{{room_id}}/"
+      let chatSocket = null;
+      let roomId = null;
 
-      {% else %}
-      let ws_path = ws_scheme + "://" + window.location.host + "8001/public_chats/{{room_id}}/"
-      {% endif %}
-    initPublicChat(ws_path, "{{ room_id }}", "{{ request.user.is_authenticated }}")
+      onStart();
+
+      function onStart() {
+        {% if m_and_f %}
+            onSelectFriend("{{ m_and_f.0.friend.id }}")
+        {% endif %}
+      }
+
+      function onSelectFriend(userId){
+        let selectedFriendContainer = document.getElementById("")
+        createOrReturnPrivateChat(userId)
+      }
+
+      function closeWebsocket() {
+        if(chatSocket != null){
+          chatSocket.close();
+          chatSocket = null;
+        }
+      }
+
+      function setupWebsocket(roomId) {
+          console.log("setupWebsocket: " + roomId);
+          // close prev socket
+          closeWebsocket();
+
+          // define websocket for initPublicChat
+          let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+          {% if debug_mode %}
+              let ws_path = ws_scheme + "://" + window.location.host + "/chat/" + roomId + "/";
+          {% else %}
+              let ws_path = ws_scheme + "://" + window.location.host + "8001/chat/" + roomId + "/";
+          {% endif %}
+
+
+          chatSocket = new WebSocket(ws_path)
+          is_auth = "{{ request.user.is_authenticated }}" === "True";
+
+          chatSocket.onmessage = function (message) {
+              console.log("Got chat websocket message: " + message.data)
+
+              let data = JSON.parse(message.data)
+
+              if (data.error) {
+                  console.log('Error')
+              }
+              if (data.join) {
+                  console.log('data join')
+                  getUserInfo(roomId)
+              }
+
+              if (data.leave) {
+                  console.log('leaving room')
+              }
+
+              if (data.user_info) {
+                  handleUserInfoPayload(data.user_info)
+              }
+          };
+
+          chatSocket.addEventListener("open", function (e) {
+              console.log("Chat Socket OPEN")
+              if (is_auth) {
+                  chatSocket.send(JSON.stringify
+                      ({
+                          "command": "join",
+                          "room_id": roomId
+                      })
+                  )
+              }
+          })
+
+          chatSocket.onclose = function (e) {
+              // console.log("Chat Socket CLOSED")
+              // if (is_auth) {
+              //     chatSocket.send(JSON.stringify
+              //         ({
+              //             "command": "leave",
+              //             "room_id": roomId
+              //         })
+              //     )
+              // }
+          }
+
+          chatSocket.onopen = function (e) {
+              console.log("Chat Socket: onOpen")
+          }
+
+          chatSocket.onerror = function (e) {
+              console.log("Chat Socket: onError " + e)
+          }
+
+          if (chatSocket.readyState === WebSocket.OPEN) {
+              console.log("Chat Socket OPEN")
+          } else if (chatSocket.readyState === WebSocket.CONNECTING) {
+              console.log("Chat Socket CONNECTING...")
+          }
+          document.getElementById("id_chat_message_input").focus()
+      }
+
+      function displayChatroomLoadingSpinner(isDisplayed) {
+          let spinner = document.getElementById('loading_spinner')
+          if (isDisplayed) {
+            spinner.classList.add('active');
+          } else {
+            spinner.classList.remove('active');
+          }
+        }
+
+      function getUserInfo(roomId){
+          chatSocket.send(JSON.stringify({
+            "command": "get_user_info",
+            "room_id": roomId
+          }));
+          console.log(roomId)
+          console.log('roomId from get user info')
+      }
+
+      function handleUserInfoPayload(user_info){
+        document.getElementById("other_user_fullname").innerHTML = user_info.first_name + " " + user_info.last_name;
+        // document.getElementById("other_user_image").src=user_info.profile_image;
+        // document.getElementById("other_user_link").href = "/profiles/" + user_info.slug;
+
+
+      }
+
+      function createOrReturnPrivateChat(id){
+          let payload = {
+              "csrfmiddlewaretoken": "{{csrf_token}}",
+              "user2_id": id,
+          }
+          $.ajax({
+              type: "POST",
+              dataType: "json",
+              url: "{% url 'private_chats:create-or-return-private-chat' %}",
+              data: payload,
+              timeout: 5000,
+              success: function (data){
+                  console.log('SUCCESS', data)
+                  if (data.response === 'Successfully got the chat'){
+                      setupWebsocket(data.chatroom_id)
+                  }
+                  else if(data.response != null) {
+                      alert(data.response)
+                  }
+              },
+              error: function (data){
+                  console.log('ERROR AJAX' + data)
+              },
+              complete: function (data){
+                  // nothing
+              },
+          })
+      }
 </script>
 {% endblock scripts %}
