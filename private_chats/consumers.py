@@ -3,9 +3,15 @@ from channels.db import database_sync_to_async
 import json
 
 from private_chats.models import PrivateChatRoom, PrivateChatMessage
-from private_chats.utils import get_or_none
+from private_chats.utils import get_or_none, calculate_timestamp
 from profiles.models import Profile
 from profiles.utils import LazyProfileEncoder
+from private_chats.exceptions import ClientError
+from django.utils import timezone
+
+
+MSG_TYPE_MESSAGE = 0  # for standart messages
+DEFAULT_NUM_MESSAGES = 10
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -25,7 +31,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             if command == "leave":
                 pass
             if command == "send":
-                pass
+                if len(content['message']) != 0:
+                    await self.send_room(content['room_id'], content['message'])
             if command == "get_room_chat_messages":
                 pass
             if command == "get_user_info":
@@ -35,31 +42,77 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     payload = json.loads(payload)
                     await self.send_user_info_payload(payload['user_info'])
                 else:
-                    raise Exception('Error in consumer get_user_info')
+                    raise ClientError('EMPTY_PAYLOAD', 'Error in consumer get_user_info')
 
-
-        except Exception as e:
-            print('Error in receive_json' + str(e))
+        except ClientError as e:
+            await self.handle_client_error(e)
 
     async def disconnect(self, code):
-        print('ChatConsumer: disconnect')
-        pass
+        print('in disconnect')
+        if self.room_id:
+            try:
+                room = await get_room_or_error(self.room_id, self.scope['user'])
+            except ClientError as e:
+                return await self.handle_client_error(e)
+
+            self.room_id = None
+
+            # remove user
+            await self.channel_layer.group_discard(
+                room.group_name,
+                self.channel_name
+            )
+            # dummy json, it doesn't do anything now on client side
+            await self.send_json({
+                'leave': str(room.id)
+            })
 
     async def join_room(self, room_id):
         print(f'ChatConsumer: join_room {str(room_id)}')
         try:
             room = await get_room_or_error(room_id, self.scope['user'])
-        except Exception as e:
-            return
+        except ClientError as e:
+            return await self.handle_client_error(e)
+
+        # here we store room_id. When it's not None - we in the room
+        self.room_id = room.id
+
+        await self.channel_layer.group_add(
+            room.group_name,
+            self.channel_name
+        )
+
         await self.send_json({
             "join": str(room.id)
         })
 
-    async def leave_room(self, room_id):
-        print('ChatConsumer: leave_room')
-
     async def send_room(self, room_id, message):
+        """
+        Called by recieve_json when someone sends a message to the room
+        """
         print('ChatConsumer: send_room')
+        if self.room_id:
+            if str(room_id) != str(self.room_id):
+                raise ClientError("ROOM_ACCESS_DENIED", "Room access denied")
+        else:
+            raise ClientError("ROOM_ACCESS_DENIED", "Room access denied")
+        room = await get_room_or_error(room_id, self.scope['user'])
+
+        await create_chat_message(room, self.scope['user'], message)
+
+        profile = await _get_user_profile(self.scope['user'])
+        await self.channel_layer.group_send(
+            room.group_name,
+            {
+                "type": "chat.message",
+                "profile_image": profile.avatar.url,
+                "profile_slug": profile.slug,
+                "username": self.scope['user'].username,
+                "user_id": self.scope['user'].id,
+                "message": message,
+
+            }
+        )
 
     async def chat_join(self, event):
         print("ChatConsumer: chat_join")
@@ -68,7 +121,21 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         print('ChatConsumer: chat_leave')
 
     async def chat_message(self, event):
-        print('ChatConsumer: chat_message')
+        """
+        Called when someone send message to chat
+        """
+        # send a message down to the client
+        ts = calculate_timestamp(timezone.now())
+        await self.send_json({
+            "msg_type": MSG_TYPE_MESSAGE,
+            "profile_image": event["profile_image"],
+            "username": event["username"],
+            "user_id": event["user_id"],
+            "message": event["message"],
+            "profile_slug": event["profile_slug"],
+            "timestamp": ts,
+
+        })
 
     async def send_messages_payload(self, messages, new_page_number):
         print('ChatConsumer send_messages_payload')
@@ -80,6 +147,25 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def display_progress_bar(self, is_displayed):
         print(f'Display progress bar: {str(is_displayed)}')
+
+    async def handle_client_error(self, e):
+        """
+        Called when a ClientError is raised when
+        Send error data to the UI
+        :param self:
+        :param e:
+        :return:
+        """
+        error_data = {"error": e.code}
+        if e.message:
+            error_data["message"] = e.message
+            await self.send_json(error_data)
+        return
+
+
+@database_sync_to_async
+def _get_user_profile(user):
+    return Profile.objects.get(user=user)
 
 
 @database_sync_to_async
@@ -93,30 +179,36 @@ def get_room_or_error(room_id, user):
     try:
         room = PrivateChatRoom.objects.get(pk=room_id)
     except Exception as e:
-        raise Exception('Invalid room')
+        raise ClientError('INVALID_ROOM', 'Invalid room')
 
     if room.user1 == user or room.user2 == user:
         return room
     else:
-        raise Exception("You must be friends to chat")
+        raise ClientError('PERMISSION_DENIED', 'You must be friends to chat')
 
 
 @database_sync_to_async
 def get_user_info(room, user):
-    # try:
-    print('in get_user_info')
-    if room.user1 == user:
-        other_user = room.user2
-    elif room.user2 == user:
-        other_user = room.user1
-    else:
-        raise Exception('Error in get_user_info')
-    payload = {}
-    other_user_profile = Profile.objects.get(user=other_user)
-    s = LazyProfileEncoder()
-    payload['user_info'] = s.serialize([other_user_profile])[0]
+    try:
+        print('in get_user_info')
+        if room.user1 == user:
+            other_user = room.user2
+        elif room.user2 == user:
+            other_user = room.user1
+        else:
+            raise ClientError('USER_NOT_FOUND', 'Error in get_user_info')
+        payload = {}
+        other_user_profile = Profile.objects.get(user=other_user)
+        s = LazyProfileEncoder()
+        payload['user_info'] = s.serialize([other_user_profile])[0]
 
-    return json.dumps(payload)
-    # except ZeroDivisionError as e:
-    #     print('Error in get_user_info')
-    #     return
+        return json.dumps(payload)
+    except ClientError as e:
+        print('USERINFO_ERROR', 'Error in get_user_info')
+        return
+
+
+@database_sync_to_async
+def create_chat_message(room, user, message):
+    return PrivateChatMessage.objects.create(user=user, room=room, content=message)
+
