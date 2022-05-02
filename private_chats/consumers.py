@@ -3,11 +3,13 @@ from channels.db import database_sync_to_async
 import json
 
 from private_chats.models import PrivateChatRoom, PrivateChatMessage
-from private_chats.utils import get_or_none, calculate_timestamp
+from private_chats.utils import get_or_none, \
+    calculate_timestamp, LazyRoomChatMessageEncoder
 from profiles.models import Profile
 from profiles.utils import LazyProfileEncoder
 from private_chats.exceptions import ClientError
 from django.utils import timezone
+from django.core.paginator import Paginator
 
 
 MSG_TYPE_MESSAGE = 0  # for standart messages
@@ -28,14 +30,23 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         try:
             if command == "join":
                 await self.join_room(content['room_id'])
-            if command == "leave":
+            elif command == "leave":
                 pass
-            if command == "send":
+            elif command == "send":
                 if len(content['message']) != 0:
                     await self.send_room(content['room_id'], content['message'])
-            if command == "get_room_chat_messages":
-                pass
-            if command == "get_user_info":
+            elif command == "get_room_chat_messages":
+                await self.display_progress_bar(True)
+                room = await get_room_or_error(content['room_id'], self.scope['user'])
+                payload = await get_room_chat_messages(room, content['page_number'])
+                if payload:
+                    payload = json.loads(payload)
+                    await self.send_messages_payload(payload['messages'],
+                                                     payload['new_page_number'])
+                else:
+                    raise ClientError(404, "Something went wrong retrieving messages")
+                await self.display_progress_bar(False)
+            elif command == "get_user_info":
                 room = await get_room_or_error(content['room_id'], self.scope['user'])
                 payload = await get_user_info(room, self.scope['user'])
                 if payload:
@@ -138,7 +149,18 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         })
 
     async def send_messages_payload(self, messages, new_page_number):
-        print('ChatConsumer send_messages_payload')
+        """
+        Sends a payload of messages to the UI
+        :param messages:
+        :param new_page_number:
+        :return:
+        """
+        print('PublicChatConsumer: send_messages_payload')
+        await self.send_json({
+            "messages_payload": "messages_payload",
+            "messages": messages,
+            "new_page_number": new_page_number
+        })
 
     async def send_user_info_payload(self, user_info):
         await self.send_json({
@@ -212,3 +234,21 @@ def get_user_info(room, user):
 def create_chat_message(room, user, message):
     return PrivateChatMessage.objects.create(user=user, room=room, content=message)
 
+
+@database_sync_to_async
+def get_room_chat_messages(room, page_number):
+    try:
+        qs = PrivateChatMessage.objects.by_room(room)
+        p = Paginator(qs, DEFAULT_NUM_MESSAGES)
+        payload = {}
+        new_page_number = int(page_number)
+        if new_page_number <= p.num_pages:
+            new_page_number += 1
+            s = LazyRoomChatMessageEncoder()
+            payload['messages'] = s.serialize(p.page(page_number).object_list)
+        else:
+            payload['messages'] = None
+        payload['new_page_number'] = new_page_number
+        return json.dumps(payload)
+    except Exception as e:
+        print("Exception: " + str(e))

@@ -47,6 +47,7 @@
     <div class="chat-messages ">
       <div class="ui loader" id="loading_spinner"></div>
       <!-- Messages display here -->
+    </div>
     <div class="ui reply form chat-form">
       <div class="text">
         <textarea id="id_chat_message_input"></textarea>
@@ -55,7 +56,6 @@
         <i class="icon edit"></i> Send
       </button>
     </div>
-  </div>
 </div>
 {% endblock content %}
 
@@ -110,6 +110,8 @@
           chatSocket.close();
           chatSocket = null;
         }
+        clearChatLog()
+        setPageNumber("1")
       }
 
       function setupWebsocket(roomId) {
@@ -141,6 +143,17 @@
               if (data.join) {
                   console.log('data join')
                   getUserInfo(roomId)
+                  getRoomChatMessages()
+              }
+
+              if (data.messages_payload) {
+                handleMessagesPayload(data.messages, data.new_page_number);
+
+                // first messages payload should not change the scroll
+                if (data.new_page_number === 2) {
+                  let chat_container = document.getElementsByClassName('chat-messages')[0]
+                  chat_container.scrollTop = chat_container.scrollHeight
+                }
               }
 
               if (data.msg_type === 0) {
@@ -228,18 +241,54 @@
       }
 
       function sendMessageToSocket(e) {
-        const messageInputDom = document.getElementById("id_chat_message_input")
-        const message = messageInputDom.value
-        chatSocket.send(JSON.stringify({
-          "command": "send",
-          "message": message,
-          "room_id": roomIdGlobal
-        }))
-        messageInputDom.value = ""
+          const messageInputDom = document.getElementById("id_chat_message_input")
+          const message = messageInputDom.value
+          chatSocket.send(JSON.stringify({
+            "command": "send",
+            "message": message,
+            "room_id": roomIdGlobal
+          }))
+          messageInputDom.value = ""
       }
 
       document.getElementById("id_chat_message_submit").addEventListener("click", sendMessageToSocket);
       document.getElementById("id_chat_message_input").addEventListener("keyup", sendMessageOnEnterToSocket);
+
+      function clearChatLog(){
+          document.getElementsByClassName('chat-messages')[0].innerHTML = "";
+      }
+
+      function setPageNumber(pageNumber) {
+          document.getElementById("chat_page_number").innerHTML = pageNumber;
+      }
+
+      function setPageNumLast() {
+          setPageNumber("-1");
+      }
+
+      function getRoomChatMessages() {
+        let pageNumber = document.getElementById("chat_page_number").innerHTML
+        if (pageNumber !== "-1") {
+          setPageNumLast();
+          chatSocket.send(JSON.stringify({
+            "command": "get_room_chat_messages",
+            "room_id": roomIdGlobal,
+            "page_number": pageNumber
+          }))
+        }
+      }
+
+      function handleMessagesPayload(messages, new_page_number) {
+        if (messages != null && messages !== "undefined" && messages !== "None") {
+          setPageNumber(new_page_number)
+          messages.forEach(function (message) {
+            appendChatMessage(message, true, false)
+          })
+        } else {
+          setPageNumLast()
+        }
+      }
+
 
       function createOrReturnPrivateChat(id){
           let payload = {
