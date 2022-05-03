@@ -168,7 +168,18 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         })
 
     async def display_progress_bar(self, is_displayed):
-        print(f'Display progress bar: {str(is_displayed)}')
+        """
+        1. is_displayed = True
+         - display the progress bar on UI
+        2. is_displayed = False
+         - hide the progress bar on UI
+        :param is_displayed:
+        :return:
+        """
+        print("DISPLAY PROGRESS BAR" + str(is_displayed))
+        await self.send_json({
+            'display_progress_bar': is_displayed
+        })
 
     async def handle_client_error(self, e):
         """

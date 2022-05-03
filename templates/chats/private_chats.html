@@ -44,8 +44,8 @@
         </a>
       </div>
       </div>
+    <div class="ui loader" id="loading_spinner"></div>
     <div class="chat-messages ">
-      <div class="ui loader" id="loading_spinner"></div>
       <!-- Messages display here -->
     </div>
     <div class="ui reply form chat-form">
@@ -108,6 +108,7 @@
       function closeWebsocket() {
         if(chatSocket != null){
           chatSocket.close();
+          console.log('Close websocket')
           chatSocket = null;
         }
         clearChatLog()
@@ -137,12 +138,14 @@
 
               let data = JSON.parse(message.data)
 
+              displayChatroomLoadingSpinner(data.display_progress_bar)
+
               if (data.error) {
                   console.log('Error')
               }
               if (data.join) {
-                  console.log('data join')
-                  getUserInfo(roomId)
+                  console.log('data join ' + chatSocket.readyState )
+                  getUserInfo(roomIdGlobal)
                   getRoomChatMessages()
               }
 
@@ -222,7 +225,6 @@
             "command": "get_user_info",
             "room_id": roomId
           }));
-          console.log(roomId)
           console.log('roomId from get user info')
       }
 
@@ -270,12 +272,23 @@
         let pageNumber = document.getElementById("chat_page_number").innerHTML
         if (pageNumber !== "-1") {
           setPageNumLast();
-          chatSocket.send(JSON.stringify({
-            "command": "get_room_chat_messages",
-            "room_id": roomIdGlobal,
-            "page_number": pageNumber
+          if (chatSocket.readyState === 1){
+            chatSocket.send(JSON.stringify({
+              "command": "get_room_chat_messages",
+              "room_id": roomIdGlobal,
+              "page_number": pageNumber
           }))
+        }else{
+            console.log('Error, cant download messages')
+            // unknown bug. Socket does not have time to open then change chat
+            // but then you try again, everything if fine
+            setupWebsocket(roomIdGlobal)
+          }
         }
+      }
+
+      function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
       }
 
       function handleMessagesPayload(messages, new_page_number) {
@@ -288,6 +301,13 @@
           setPageNumLast()
         }
       }
+
+      let chatContainer = document.getElementsByClassName("chat-messages")[0]
+      chatContainer.addEventListener("scroll", function (e) {
+        if (chatContainer.scrollTop < 30) {
+          getRoomChatMessages();
+        }
+      })
 
 
       function createOrReturnPrivateChat(id){
