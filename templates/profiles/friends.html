@@ -58,11 +58,13 @@ Friends
                 <a href="/profiles/{{ user_profile.profile.slug }}" class="image">
                     <img  src="{{ user_profile.profile.avatar.url }}">
                 </a>
-                <div class="content">
+                <div class="content friend-container-content">
                   <a href="/profiles/{{ user_profile.profile.slug }}" class="header">{{ user_profile.profile.first_name }} {{ user_profile.profile.last_name }}</a>
                   <div class="meta">
                     <span class="date">{{ user_profile.country }}</span>
+
                   </div>
+                  <button onclick="createOrReturnPrivateChat({{ user_profile.id }})" class="ui small primary button profile-action-button">Send message</button>
                 </div>
                 <div class="extra content">
                   <a>
@@ -74,11 +76,9 @@ Friends
         {% endfor %}
 
     </div>
-
+{% include 'snippets/create_or_return_private_chat.html' %}
 {% endblock content %}
 
 {% block scripts %}
-<script>
 
-</script>
 {% endblock scripts %}

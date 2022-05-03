@@ -95,13 +95,21 @@
       onStart();
 
       function onStart() {
-        {% if m_and_f %}
-            onSelectFriend("{{ m_and_f.0.friend.id }}")
-        {% endif %}
+          {% if room %}
+              if("{{ room.user1 }}" === "{{ request.user }}"){
+                  onSelectFriend("{{ room.user2.id }}")
+              }
+              else {
+                  onSelectFriend("{{ room.user1.id }}")
+              }
+          {% elif m_and_f %}
+              onSelectFriend("{{ m_and_f.0.friend.id }}")
+          {% endif %}
       }
 
       function onSelectFriend(userId){
-        let selectedFriendContainer = document.getElementById("")
+        clearHighlightedFriend()
+        highlightFriend(userId)
         createOrReturnPrivateChat(userId)
       }
 
@@ -309,6 +317,19 @@
         }
       })
 
+      function highlightFriend(userId){
+        document.getElementById('id_friend_container_' + userId).style.background = '#efefef';
+      }
+
+      function clearHighlightedFriend(){
+          // temporary solution, in the future the id of the selected friend will be stored
+          // in the local storage/cookies.
+          {% if m_and_f %}
+              {% for x in m_and_f %}
+                   document.getElementById('id_friend_container_' + {{ x.friend.id }}).style.background = '';
+              {% endfor %}
+          {% endif %}
+      }
 
       function createOrReturnPrivateChat(id){
           let payload = {

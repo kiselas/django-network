@@ -177,6 +177,10 @@ img.friend-request {
     width: 70px !important;
     padding: 20px;
 }
+
+.friend-container-content {
+    text-align: center !important;
+}
 @media screen and (min-width: 900px) {
   article {
     padding: 1rem 3rem;

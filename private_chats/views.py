@@ -13,6 +13,7 @@ from private_chats.utils import find_or_create_private_chat
 def private_chat_room_view(request, *args, **kwargs):
 
     user = request.user
+    room_id = request.GET.get('room_id')
 
     if not user.is_authenticated:
         return redirect('home_view')
@@ -35,13 +36,22 @@ def private_chat_room_view(request, *args, **kwargs):
                         'friend': friend})
 
     context = {'debug_mode': settings.DEBUG,
-               'm_and_f': m_and_f}
+               'm_and_f': m_and_f, }
+
+    if room_id:
+        try:
+            room = PrivateChatRoom.objects.get(id=room_id)
+            context['room'] = room
+        except PrivateChatRoom.DoesNotExist:
+            print(f'Room {room_id} does not exist')
+
+
     return render(request, "chats/private_chats.html", context)
 
 
 def create_or_return_private_chat(request, *args, **kwargs):
     user1 = request.user
-    payload =  {}
+    payload = {}
     if user1.is_authenticated:
         if request.method == 'POST':
             user2_id = request.POST.get('user2_id')
