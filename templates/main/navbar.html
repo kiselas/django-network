@@ -4,6 +4,7 @@
 <!--{% url 'profiles:my-invites-view' as path_to_my_invites %}-->
 <!--{% url 'profiles:friends' as friends %}-->
 <!--{% url 'chats' as chats %}-->
+<!--{% url 'private_chats:private-chat-room' as private_chats %}-->
 <!--{% url 'profiles:all-profiles-view' as all_profiles %}-->
 <!--{% url 'profiles:profile-detail-view' slug=request.user.profile.slug as my_profile %}-->
 <div class="ui inverted menu nav mb-7">
@@ -21,6 +22,9 @@
     </a>
     <a href="{{chats}}" class="{% if request.path == chats %}active{% endif %} item">
         Public chat
+    </a>
+    <a href="{{private_chats}}" class="{% if request.path == private_chats %}active{% endif %} item">
+        My chats
     </a>
     <a href="{{all_profiles}}" class="{% if request.path == all_profiles %}active{% endif %} item">
         All profiles

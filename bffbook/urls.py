@@ -18,6 +18,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
+import private_chats
 from .views import home_view, logout, login
 from chats.views import public_chats_view
 
@@ -28,7 +29,8 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('login', login, name='login'),
     path('logout', logout, name='logout'),
-    path('chats/', public_chats_view, name='chats')
+    path('chats/', public_chats_view, name='chats'),
+    path('private_chats/', include('private_chats.urls', namespace='private_chats')),
     # path('posts/', include('posts.urls',  namespace='posts'))
 ]
 

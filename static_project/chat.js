@@ -96,9 +96,6 @@ function initPublicChat(ws_path, room_id, is_auth) {
         }
       }
 
-      document.getElementById("id_chat_message_submit").addEventListener("click", sendMessageToSocket);
-      document.getElementById("id_chat_message_input").addEventListener("keyup", sendMessageOnEnterToSocket);
-
       function sendMessageToSocket(e) {
         const messageInputDom = document.getElementById("id_chat_message_input")
         const message = messageInputDom.value
@@ -109,6 +106,11 @@ function initPublicChat(ws_path, room_id, is_auth) {
         }))
         messageInputDom.value = ""
       }
+
+      document.getElementById("id_chat_message_submit").addEventListener("click", sendMessageToSocket);
+      document.getElementById("id_chat_message_input").addEventListener("keyup", sendMessageOnEnterToSocket);
+
+
 
       function displayChatroomLoadingSpinner(isDisplayed) {
         let spinner = document.getElementById('loading_spinner')
@@ -289,3 +291,4 @@ function initPublicChat(ws_path, room_id, is_auth) {
       }
 
     }
+    

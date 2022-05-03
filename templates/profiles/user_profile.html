@@ -77,11 +77,11 @@
                 </form>
                 <!-- Если уже друзья -->
                 {% if request.user in profile.friends.all %}
-                    <p class="ui positive basic button profile-action-button">{{ profile.first_name }} in your friends</p>
+                    <button onclick="createOrReturnPrivateChat({{ profile.user.id }})" class="ui primary button profile-action-button">Send message to {{ profile.first_name }}</button>
                     <form action="{% url 'profiles:remove-friend' %}" method="POST">
                         {% csrf_token %}
                         <input type="hidden" name="profile_pk" value="{{ profile.pk}}">
-                        <button name="delete_friend" class="ui negative button profile-action-button" >Remove from friends</button>
+                        <button name="delete_friend" class="ui basic negative button profile-action-button" >Remove from friends</button>
                     </form>
                 {% elif profile.user in rel_receiver and request.user not in profile.friends.all %}
                     <!--Если мы уже отправили заявку в друзья-->
@@ -135,24 +135,6 @@
                 <div class="ui three column centered friends">
                     <div class="ui grid centered">
                     {% for friend in profile.get_friends %}
-                        <div class="friend column wide" >
-                            <a href="/profiles/{{ friend.profile.slug }}" class="ui ">
-                                <img class="ui circular image friend-avatar" src="{{ friend.profile.avatar.url }}"/>
-                                <p>{{ friend.profile.first_name }} {{ friend.profile.last_name }}</p>
-                            </a>
-                        </div>
-                        <div class="friend column wide" >
-                            <a href="/profiles/{{ friend.profile.slug }}" class="ui ">
-                                <img class="ui circular image friend-avatar" src="{{ friend.profile.avatar.url }}"/>
-                                <p>{{ friend.profile.first_name }} {{ friend.profile.last_name }}</p>
-                            </a>
-                        </div>
-                        <div class="friend column wide" >
-                            <a href="/profiles/{{ friend.profile.slug }}" class="ui ">
-                                <img class="ui circular image friend-avatar" src="{{ friend.profile.avatar.url }}"/>
-                                <p>{{ friend.profile.first_name }} {{ friend.profile.last_name }}</p>
-                            </a>
-                        </div>
                         <div class="friend column wide" >
                             <a href="/profiles/{{ friend.profile.slug }}" class="ui ">
                                 <img class="ui circular image friend-avatar" src="{{ friend.profile.avatar.url }}"/>
@@ -329,5 +311,7 @@
     <hr>
 
 </div>
+
+{% include 'snippets/create_or_return_private_chat.html' %}
 
 {% endblock %}

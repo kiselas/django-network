@@ -2,22 +2,18 @@ import json
 
 from django.core.serializers.python import Serializer
 from django.core.paginator import Paginator
-from django.core.serializers import serialize
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from django.contrib.auth import get_user_model
-from django.contrib.humanize.templatetags.humanize import naturalday
 from django.utils import timezone
-from datetime import datetime
 from profiles.models import Profile
 from .models import PublicChatRoom, PublicRoomChatMessage
 from contextlib import suppress
+from private_chats.exceptions import ClientError
+from private_chats.utils import calculate_timestamp
 
 MSG_TYPE_MESSAGE = 0  # for standart messages
 MSG_TYPE_CONNECTED_USERS = 1 # for sending the connected users
 DEFAULT_NUM_MESSAGES = 10
-
-User = get_user_model()
 
 
 class PublicChatConsumer(AsyncJsonWebsocketConsumer):
@@ -299,24 +295,6 @@ def get_room_or_error(room_id):
     except PublicChatRoom.DoesNotExist:
         raise ClientError("ROOM_INVALID", "Invalid room")
     return room
-
-
-class ClientError(Exception):
-    def __init__(self, code, message=None):
-        super().__init__(code)
-        self.code = code
-        self.message = message
-
-
-def calculate_timestamp(timestamp):
-    nd_time = naturalday(timestamp)
-    if nd_time == "today" or nd_time == "yesterday":
-        str_time = datetime.strftime(timestamp, "%I:%M %p")
-        str_time = str_time.strip("0")
-        ts = f"{nd_time} at {str_time}"
-    else:
-        ts = f'{datetime.strftime(timestamp, "%m/%d/%Y")}'
-    return ts
 
 
 @database_sync_to_async
