@@ -9,7 +9,10 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.conf import settings
+from notifications.models import Notifications
+from django.contrib.contenttypes.models import ContentType
+OBJ_ID_FRIENDS_REQUESTS = 1
 
 @login_required
 def like_unlike_post(request):
@@ -123,11 +126,30 @@ def accept_reject_invitation(request):
         rel = get_object_or_404(Relationship, sender=sender, receiver=receiver)
 
         if rel.status == 'send':
+            content_type = ContentType.objects.get_for_model(Relationship)
             if 'approve_request' in request.POST:
                 rel.status = 'accepted'
                 rel.save()
+
+                # create notification
+                Notifications(target=sender.user,
+                              from_user=receiver.user,
+                              redirect_url=f"/profiles/{receiver.slug}/",
+                              verb=f"Your friend request to user {receiver.first_name} {receiver.last_name} accepted",
+                              content_type=content_type,
+                              object_id=OBJ_ID_FRIENDS_REQUESTS,
+                              ).save()
             elif 'decline_request' in request.POST:
                 rel.delete()
+
+                # create notification
+                Notifications(target=sender.user,
+                              from_user=receiver.user,
+                              redirect_url=f"/profiles/{receiver.slug}/",
+                              verb=f"Your friend request to user {receiver.first_name} {receiver.last_name} rejected",
+                              content_type=content_type,
+                              object_id=OBJ_ID_FRIENDS_REQUESTS,
+                              ).save()
 
         return redirect(request.META.get('HTTP_REFERER'))
 
@@ -269,6 +291,15 @@ def send_invitation(request):
         rel = Relationship.objects.create(sender=sender,
                                           receiver=receiver,
                                           status='send')
+
+        content_type = ContentType.objects.get_for_model(Relationship)
+        Notifications(target=receiver.user,
+                      from_user=sender.user,
+                      redirect_url=f"/profiles/{sender.slug}/",
+                      verb=f"Recieved friend request from {sender.first_name} {sender.last_name}",
+                      content_type=content_type,
+                      object_id=OBJ_ID_FRIENDS_REQUESTS,
+                      ).save()
 
         return redirect(request.META.get('HTTP_REFERER'))
     return redirect('profiles:my-profile-view')

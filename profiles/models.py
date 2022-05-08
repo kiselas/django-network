@@ -116,3 +116,7 @@ class Relationship(models.Model):
 
     def __str__(self):
         return f"{self.sender}--{self.receiver}--{self.status}"
+
+    @property
+    def get_cname(self):
+        return "FriendRequest"

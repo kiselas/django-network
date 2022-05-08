@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'profiles',
     'chats',
     'private_chats',
+    'notifications',
 ]
 
 SITE_ID = 1
