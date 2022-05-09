@@ -26,9 +26,11 @@ body {
 }
 
 .notification-menu {
-    width: 400px !important;
+    width: 500px !important;
     margin-left: -200px !important;
     display: block !important;
+    max-height: 430px;
+    overflow-y: scroll;
 }
 
 .avatar {
@@ -326,3 +328,57 @@ img.friend-request {
     background-color: #efefef !important;
 }
 
+
+/*notifications*/
+#notification-container {
+    padding: 11px 16px;
+}
+
+#notification-container .content {
+    color: #000 !important;
+}
+
+#notification-container img {
+    border-radius: 200px !important;
+}
+
+#notification-container .author {
+    position: absolute;
+    top: 0;
+    left: 90px;
+}
+
+#notification-container .content {
+    margin-left: 10px;
+}
+
+#notification-container time {
+    color: #858585;
+    font-size: 0.8em;
+    margin-left: 5px;
+}
+
+#notification-container p {
+    color: #000 !important;
+}
+
+#notification-container .notification_seen {
+    background-color: #dbdbdb;
+    opacity: 0.8;
+}
+
+.container_icon {
+            position: relative;
+        }
+
+.container__indicator {
+    /* Shown at the bottom right corner */
+    bottom: 10px;
+    position: absolute;
+    right: 5px;
+    transform: translate(50%, 50%);
+    border-radius: 9999px;
+    height: 10px;
+    width: 10px;
+    background-color: #FF4136;
+}

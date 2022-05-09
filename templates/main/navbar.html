@@ -46,17 +46,25 @@
             </div>
 
              <div class="ui dropdown notifications">
-              <i class="bell icon notification-icon"></i>
+              <i class="bell icon notification-icon container_icon">
+                  <div class="" id="notifications_indicator"></div>
+              </i>
+              <span id="notifications_page_number" style="display: none;">1</span>
               <div class="menu notification-menu transition hidden">
-                <div class="item">
-                    {% if friend_req_count > 0 %}
-                    <b>Friend Requests ({{ friend_req_count }})</b>
-                    {% else %}
-                    Friend Requests ({{ friend_req_count }})
-                    {% endif %}
+                <div class="ui divided items" id="notification-container">
+{#                  <div class="item">#}
+{#                    <div class="ui tiny image">#}
+{#                      <img src="/media/avatars/6066341416.jpg">#}
+{#                    </div>#}
+{#                      <div class="author" >#}
+{#                          <a href="test">Aleksandr Kiselev</a><time>Five minutes ago</time>#}
+{#                      </div>#}
+{#                      <br>#}
+{#                    <div class="content">#}
+{#                        <p>Text</p>#}
+{#                    </div>#}
+{#                  </div>#}
                 </div>
-                <div class="disabled item">New likes (0)</div>
-                <div class="item">New comments (0)</div>
               </div>
             </div>
 

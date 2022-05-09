@@ -40,3 +40,7 @@ class PrivateChatMessage(models.Model):
 
     def __str__(self):
         return self.content
+
+
+class UnreadChatRoomMessages(models.Model):
+    pass
