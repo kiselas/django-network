@@ -15,6 +15,7 @@ from django.contrib.contenttypes.models import ContentType
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 OBJ_ID_FRIENDS_REQUESTS = 1
+OBJ_ID_NEW_LIKE = 2
 
 
 @login_required
@@ -37,8 +38,10 @@ def like_unlike_post(request):
                 like.value = 'Unlike'
             else:
                 like.value = 'Like'
+                create_like_notification(like, post_obj,  user, 'new like', OBJ_ID_NEW_LIKE)
         else:
             like.value = 'Like'
+            create_like_notification(like, post_obj, user, 'new like', OBJ_ID_NEW_LIKE)
         post_obj.save()
         like.save()
 
@@ -323,3 +326,17 @@ def remove_friend(request):
         rel.delete()
         return redirect(request.META.get('HTTP_REFERER'))
     return redirect('profiles:my-profile-view')
+
+
+def create_like_notification(model, post_obj, from_user, verb, object_id):
+    from_user_profile = Profile.objects.get(user=from_user)
+    post_page_profile = Profile.objects.get(id=post_obj.page_id)
+    post_id = post_obj.id
+    content_type = ContentType.objects.get_for_model(model)
+    Notifications(target=post_obj.author.user,
+                  from_user=from_user,
+                  redirect_url=f"/profiles/{post_page_profile.slug}/#post-{post_id}",
+                  verb=f"Recieved {verb} from {from_user_profile.first_name} {from_user_profile.last_name}",
+                  content_type=content_type,
+                  object_id=object_id,
+                  ).save()

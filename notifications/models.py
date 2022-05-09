@@ -11,9 +11,9 @@ class Notifications(models.Model):
     # user who created notification
     from_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                   null=True, blank=True, related_name='from_user')
-    redirect_url = models.URLField(max_length=500, null=True,
-                                   unique=False, blank=True,
-                                   help_text="The URL to redirect when clicked notification")
+    redirect_url = models.CharField(max_length=500, null=True,
+                                    unique=False, blank=True,
+                                    help_text="The URL to redirect when clicked notification")
     # Description of notification
     verb = models.CharField(max_length=255, unique=False, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)

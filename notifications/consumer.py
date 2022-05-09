@@ -31,7 +31,10 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         """
         print("NotificationConsumer: connect: " + str(self.scope["user"]))
         print('Channel name for this user ' + self.channel_name)
+
+        # we need to force remove duplicate channels name from db
         await remove_channel_name_from_db(user=self.scope["user"])
+        # save actual channel name to db for notifications
         await save_channel_name_to_db(self.scope["user"], self.channel_name)
         await self.accept()
 
@@ -228,8 +231,7 @@ def get_general_notifications(user, page_number):
     """
     if user.is_authenticated:
         friend_request_ct = ContentType.objects.get_for_model(Relationship)
-        notifications = Notifications.objects.filter(target=user,
-                                                     content_type=friend_request_ct).order_by(
+        notifications = Notifications.objects.filter(target=user).order_by(
             '-timestamp')
         p = Paginator(notifications, DEFAULT_NOTIFICATION_PAGE_SIZE)
 
