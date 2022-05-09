@@ -1,18 +1,14 @@
 import re
 
-from django.conf import settings
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.core.paginator import Paginator
-from django.core.serializers import serialize
 from channels.db import database_sync_to_async
 from django.contrib.contenttypes.models import ContentType
 
 import json
-from datetime import datetime
 
-from private_chats.models import UnreadChatRoomMessages
 from profiles.models import Relationship
-from notifications.models import Notifications
+from notifications.models import Notifications, Clients
 from notifications.utils import LazyNotificationEncoder
 from notifications.constants import *
 from private_chats.exceptions import ClientError
@@ -34,12 +30,16 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         Called when the websocket is handshaking as part of initial connection.
         """
         print("NotificationConsumer: connect: " + str(self.scope["user"]))
+        print('Channel name for this user ' + self.channel_name)
+        await remove_channel_name_from_db(user=self.scope["user"])
+        await save_channel_name_to_db(self.scope["user"], self.channel_name)
         await self.accept()
 
     async def disconnect(self, code):
         """
         Called when the WebSocket closes for any reason.
         """
+        await remove_channel_name_from_db(channel_name=self.channel_name)
         print("NotificationConsumer: disconnect")
 
     async def receive_json(self, content):
@@ -60,7 +60,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
                                                                   payload['new_page_number'])
             elif command == 'read_notifications':
                 for notification in content['notifications']:
-                    notification_id = re.search(r'(\d)', notification).group(1)
+                    notification_id = re.search(r'(\d+)', notification).group(1)
                     try:
                         await read_notification(notification_id)
                     except ClientError as e:
@@ -90,6 +90,15 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
                 "new_page_number": new_page_number,
             },
         )
+
+    # then notification for this user happens, send msg for client to update notifications
+    async def new_notification_handler(self, event):
+        await self.send_json(
+            {
+                "general_msg_type": CHAT_UPDATE_NOTIFICATION,
+            },
+        )
+
 
     # async def send_updated_friend_request_notification(self, notification):
     #     """
@@ -199,10 +208,14 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
 @database_sync_to_async
 def read_notification(notification_id):
-    notification = Notifications.objects.get(id=notification_id)
-    notification.read = True
-    notification.save()
-    print('Successfully read notification')
+    try:
+        notification = Notifications.objects.get(id=notification_id)
+        notification.read = True
+        notification.save()
+        print('Successfully read notification')
+    except Notifications.DoesNotExist:
+        print(f'Notification with id {notification_id} does not exist')
+
 
 
 @database_sync_to_async
@@ -233,6 +246,20 @@ def get_general_notifications(user, page_number):
         raise ClientError("AUTH_ERROR", "User must be authenticated to get notifications.")
 
     return json.dumps(payload)
+
+
+@database_sync_to_async
+def save_channel_name_to_db(user, channel_name):
+    Clients.objects.create(user=user, channel_name=channel_name)
+
+
+@database_sync_to_async
+def remove_channel_name_from_db(channel_name=None, user=None):
+    if channel_name:
+        Clients.objects.filter(channel_name=channel_name).delete()
+    if user:
+        Clients.objects.filter(user=user).delete()
+
 #
 #
 # @database_sync_to_async

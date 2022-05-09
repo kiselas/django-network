@@ -32,6 +32,7 @@
         let notificationSocket = new WebSocket(ws_path)
         notificationSocket.onmessage = function (message) {
             let data = JSON.parse(message.data);
+            console.log(data)
 
             if (data.general_msg_type === 1){
                 handleGeneralNotificationData(data['notifications'], data['new_page_number'])
@@ -39,6 +40,9 @@
                  setTimeout(() => {
                     setNotificationsScrollListener();
                 }, "2500")
+            }
+            if (data.general_msg_type === 11){
+                console.log('New notification recieved')
             }
         }
         notificationSocket.onclose = function(e){

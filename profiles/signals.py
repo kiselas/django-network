@@ -26,6 +26,7 @@ def post_save_add_to_friends(sender, instance, created, **kwargs):
             chat.is_active = True
             chat.save()
 
+
 @receiver(pre_delete, sender=Relationship)
 def pre_delete_from_friends(sender, instance, **kwargs):
     sender = instance.sender

@@ -29,3 +29,10 @@ class Notifications(models.Model):
     def get_content_object_type(self):
         return str(self.content_object.get_cname)
 
+
+class Clients(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    channel_name = models.CharField(max_length=500, unique=True)
+
+    def __str__(self):
+        return f'{self.user}:{self.channel_name}'

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from notifications.models import Notifications
+from notifications.models import Notifications, Clients
 
 
 class NotificationsAdmin(admin.ModelAdmin):
@@ -12,5 +12,17 @@ class NotificationsAdmin(admin.ModelAdmin):
         model = Notifications
 
 
+class ClientsAdmin(admin.ModelAdmin):
+
+    list_filter = ['user']
+    list_display = ['user', 'channel_name']
+    search_fields = ['user']
+
+    class Meta:
+        model = Clients
+
+
+
 admin.site.register(Notifications, NotificationsAdmin)
+admin.site.register(Clients, ClientsAdmin)
 

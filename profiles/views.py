@@ -10,9 +10,12 @@ from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
-from notifications.models import Notifications
+from notifications.models import Notifications, Clients
 from django.contrib.contenttypes.models import ContentType
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 OBJ_ID_FRIENDS_REQUESTS = 1
+
 
 @login_required
 def like_unlike_post(request):
