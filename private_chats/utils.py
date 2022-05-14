@@ -48,5 +48,6 @@ class LazyRoomChatMessageEncoder(Serializer):
                             "profile_image": profile.avatar.url,
                             "profile_slug": profile.slug,
                             'timestamp': calculate_timestamp(obj.timestamp),
+                            'read': obj.read
                             })
         return dump_object

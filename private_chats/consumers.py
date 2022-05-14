@@ -35,6 +35,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             elif command == "send":
                 if len(content['message']) != 0:
                     await self.send_room(content['room_id'], content['message'])
+            elif command == 'read_messages':
+                room = await get_room_or_error(content['room_id'], self.scope['user'])
+                await read_messages(room, self.scope['user'].id)
+                await self.send_succsess_read_messages(content['room_id'])
             elif command == "get_room_chat_messages":
                 await self.display_progress_bar(True)
                 room = await get_room_or_error(content['room_id'], self.scope['user'])
@@ -144,6 +148,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             "user_id": event["user_id"],
             "message": event["message"],
             "profile_slug": event["profile_slug"],
+            "read": True,
             "timestamp": ts,
 
         })
@@ -195,6 +200,27 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.send_json(error_data)
         return
 
+    async def send_succsess_read_messages(self, room_id):
+        await self.send_json({
+            "succsess_read_messages": "True",
+            "room_id": room_id,
+        })
+
+
+@database_sync_to_async
+def read_messages(room, user_id):
+    all_unread_messages_qs = PrivateChatMessage.objects.filter(room_id=room, read=False)
+    for msg in all_unread_messages_qs:
+        if msg.read_users_id and len(msg.read_users_id) == 2:
+            user_already_read = msg.read_users_id.split(',')[0]
+            if not user_already_read == str(user_id):
+                msg.read_users_id = f'{user_already_read},{user_id},'
+                msg.read = True
+        elif not msg.read_users_id:
+            msg.read_users_id = f'{user_id},'
+        msg.save()
+    print('Successfully update messages')
+
 
 @database_sync_to_async
 def _get_user_profile(user):
@@ -243,7 +269,7 @@ def get_user_info(room, user):
 
 @database_sync_to_async
 def create_chat_message(room, user, message):
-    return PrivateChatMessage.objects.create(user=user, room=room, content=message)
+    return PrivateChatMessage.objects.create(user=user, room=room, content=message, read_users_id=f'{user.id},')
 
 
 @database_sync_to_async

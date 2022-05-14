@@ -382,3 +382,7 @@ img.friend-request {
     width: 10px;
     background-color: #FF4136;
 }
+
+.unread_message {
+    background-color: #dbdbdb !important;
+}

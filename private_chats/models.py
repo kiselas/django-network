@@ -35,7 +35,14 @@ class PrivateChatMessage(models.Model):
     room = models.ForeignKey(PrivateChatRoom, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     content = models.TextField(unique=False, blank=False)
+    read = models.BooleanField(default=False)
 
+    # the field where is stored the id of the user who has already read the message
+    # in format 1,2,3,4
+    # then all users from the chat in read_users -> field read switch to true
+    # for private chat length to switch read field == 2
+    # for public char length must be equal количеству человек в группе
+    read_users_id = models.CharField(max_length=255, blank=True, unique=False)
     objects = PrivateChatMessageManager()
 
     def __str__(self):

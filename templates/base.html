@@ -44,6 +44,8 @@
             if (data.general_msg_type === 11){
                 clearNotifications()
                 getFirstNotificationPage()
+                var audio = new Audio('{% static 'notification.mp3' %}');
+                audio.play();
             }
         }
         notificationSocket.onclose = function(e){
