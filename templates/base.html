@@ -26,7 +26,7 @@
     <script>
         // define websocket for initPublicChat
         let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
-        let ws_path = ws_scheme + "://" + window.location.hostname + '/' + "8001/";
+        let ws_path = ws_scheme + "://" + window.location.host + '/' + "8001/";
 
         let notificationSocket = new WebSocket(ws_path)
         notificationSocket.onmessage = function (message) {

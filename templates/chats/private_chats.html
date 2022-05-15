@@ -131,7 +131,7 @@
 
           // define websocket for initPublicChat
           let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
-          let ws_path = ws_scheme + "://" + window.location.hostname + '/' + "8001/chat/" + roomId + "/";
+          let ws_path = ws_scheme + "://" + window.location.host + '/' + "8001/chat/" + roomId + "/";
 
 
           chatSocket = new WebSocket(ws_path)
