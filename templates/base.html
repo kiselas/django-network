@@ -23,6 +23,171 @@
 
     {% block scripts %}{% endblock scripts %}
     <!--JS for UI-->
+    <script>
+        // define websocket for initPublicChat
+        let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        let ws_path = ws_scheme + "://" + window.location.host + "/";
+        // let ws_path = ws_scheme + "://" + window.location.host + "8001/";
+
+        let notificationSocket = new WebSocket(ws_path)
+        notificationSocket.onmessage = function (message) {
+            let data = JSON.parse(message.data);
+            console.log(data)
+
+            if (data.general_msg_type === 1){
+                handleGeneralNotificationData(data['notifications'], data['new_page_number'])
+
+                 setTimeout(() => {
+                    setNotificationsScrollListener();
+                }, "2500")
+            }
+            if (data.general_msg_type === 11){
+                clearNotifications()
+                getFirstNotificationPage()
+                var audio = new Audio('{% static 'notification.mp3' %}');
+                audio.play();
+            }
+        }
+        notificationSocket.onclose = function(e){
+            console.log("Notification socket closed")
+        }
+        notificationSocket.onopen = function(e){
+            console.log("Notification socket open")
+            getFirstNotificationPage()
+        }
+        notificationSocket.onerror = function(e){
+            console.log("Notification socket closed with error")
+        }
+
+        setNotificationsScrollListener()
+        // notification container
+        function clearNotifications() {
+            let notificationContainer = document.getElementById("notification-container");
+            notificationContainer.innerHTML = '';
+        }
+        function createNotificationCard(notification){
+            let notification_type = ''
+            let notification_status = 'notification_not_seen'
+            let notSeenCounter = 0;
+            itemDiv = document.createElement("div");
+            itemDiv.classList.add('item');
+            itemDiv.id = 'notification_' + notification['notification_id']
+            if(notification['notification_type']==='profiles | relationship'){
+                notification_type = 'friends';
+            } else if(notification['notification_type']==='posts | like') {
+                notification_type = 'post';
+            }
+            if(notification['is_read']===true){
+                notification_status = 'notification_seen';
+            } else {
+                notSeenCounter++;
+            }
+            if(notSeenCounter !== 0){
+                // display new notifications indicator
+                document.getElementById('notifications_indicator').classList.add('container__indicator');
+            }
+            itemDiv.classList.add(notification_status)
+            itemDiv.innerHTML = `
+                <div class="ui tiny image">
+                  <img src="${notification['from_user_img']}">
+                </div>
+                  <div class="author" >
+                      <p>From <a href="/profiles/${notification['from_user_slug']}/">${notification['from_user_name']}</a><time>${notification['natural_timestamp']}</time></p>
+                  </div>
+                  <br>
+                <div class="content">
+                    <p>${notification['verb']}</p>
+                    <p>Go to <a href='${notification["redirect_url"]}'>${notification_type}</a></p>
+                </div>
+
+            `
+            return itemDiv
+        }
+
+        function appendNotificationCard(card, position) {
+            let notificationContainer = document.getElementById("notification-container");
+            if(position==='bottom'){
+                notificationContainer.appendChild(card)
+            }
+            else if (position==='top'){
+                notificationContainer.insertBefore(card, notificationContainer.firstChild);
+            }
+
+        }
+
+        function handleGeneralNotificationData(notifications, new_page_number){
+            if(notifications.length > 0){
+                //clearNotifications();
+                notifications.forEach(notification => {
+                    let card = createNotificationCard(notification);
+                    appendNotificationCard(card, 'bottom');
+                    console.log('appendNotification')
+                })
+            }
+            document.getElementById('notifications_page_number').innerHTML = new_page_number;
+        }
+        // auto reading notifications on click
+        let notificationButton = document.getElementsByClassName('notifications')[0]
+        notificationButton.addEventListener('click', readNotifications);
+        function readNotifications(){
+            console.log('Create request to read notifications')
+            let notifications = document.getElementById("notification-container").children;
+            notifications = Array.from(notifications).slice(0, 4);
+            let not_seen_notifications = [];
+            for(let n in notifications){
+                if(notifications[n].classList.contains('notification_not_seen')){
+                    not_seen_notifications.push(notifications[n].id);
+                }
+            }
+            // set timeout to change status of notifications and indicator
+            setTimeout(() => {
+              notifications.forEach(notification => {
+                notification.classList.remove('notification_not_seen');
+                notification.classList.add('notification_seen');
+                })
+                // hide notifications indicator after reading
+                document.getElementById('notifications_indicator').classList.remove('container__indicator');
+            }, "2000")
+
+            notificationSocket.send(JSON.stringify({
+                    'command': 'read_notifications',
+                    'notifications': not_seen_notifications,
+                }))
+        }
+
+        function setNotificationsScrollListener(){
+            let notificationMenu = document.getElementsByClassName("notification-menu")[0];
+            function checkScroll(){
+                if (notificationMenu.scrollTop >= (notificationMenu.scrollHeight - notificationMenu.offsetHeight - 20)) {
+                    notificationMenu.removeEventListener('scroll', checkScroll);
+                    getNextNotificationsPage()
+                }
+            }
+            notificationMenu.addEventListener("scroll", checkScroll)
+        }
+
+        // for sending payload to consumer
+        function getFirstNotificationPage(){
+            console.log('Try to get first page notifications')
+            let is_auth = "{{ request.user.is_authenticated }}" === "True";
+            if(is_auth){
+                notificationSocket.send(JSON.stringify({
+                    'command': 'get_notifications',
+                    'page_number': '1',
+                }))
+            }
+        }
+
+        function getNextNotificationsPage(){
+            let pageNumber = document.getElementById('notifications_page_number').innerText;
+            if(pageNumber !== "-1"){
+                notificationSocket.send(JSON.stringify({
+                    'command': 'get_notifications',
+                    'page_number': pageNumber,
+                }))
+            }
+        }
+    </script>
     <script type="text/javascript" src="{% static 'main.js' %}"></script>
   </body>
 </html>

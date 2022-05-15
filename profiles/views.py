@@ -9,6 +9,13 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.conf import settings
+from notifications.models import Notifications, Clients
+from django.contrib.contenttypes.models import ContentType
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+OBJ_ID_FRIENDS_REQUESTS = 1
+OBJ_ID_NEW_LIKE = 2
 
 
 @login_required
@@ -31,8 +38,10 @@ def like_unlike_post(request):
                 like.value = 'Unlike'
             else:
                 like.value = 'Like'
+                create_like_notification(like, post_obj,  user, 'new like', OBJ_ID_NEW_LIKE)
         else:
             like.value = 'Like'
+            create_like_notification(like, post_obj, user, 'new like', OBJ_ID_NEW_LIKE)
         post_obj.save()
         like.save()
 
@@ -123,11 +132,30 @@ def accept_reject_invitation(request):
         rel = get_object_or_404(Relationship, sender=sender, receiver=receiver)
 
         if rel.status == 'send':
+            content_type = ContentType.objects.get_for_model(Relationship)
             if 'approve_request' in request.POST:
                 rel.status = 'accepted'
                 rel.save()
+
+                # create notification
+                Notifications(target=sender.user,
+                              from_user=receiver.user,
+                              redirect_url=f"/profiles/{receiver.slug}/",
+                              verb=f"Your friend request to user {receiver.first_name} {receiver.last_name} accepted",
+                              content_type=content_type,
+                              object_id=OBJ_ID_FRIENDS_REQUESTS,
+                              ).save()
             elif 'decline_request' in request.POST:
                 rel.delete()
+
+                # create notification
+                Notifications(target=sender.user,
+                              from_user=receiver.user,
+                              redirect_url=f"/profiles/{receiver.slug}/",
+                              verb=f"Your friend request to user {receiver.first_name} {receiver.last_name} rejected",
+                              content_type=content_type,
+                              object_id=OBJ_ID_FRIENDS_REQUESTS,
+                              ).save()
 
         return redirect(request.META.get('HTTP_REFERER'))
 
@@ -270,6 +298,15 @@ def send_invitation(request):
                                           receiver=receiver,
                                           status='send')
 
+        content_type = ContentType.objects.get_for_model(Relationship)
+        Notifications(target=receiver.user,
+                      from_user=sender.user,
+                      redirect_url=f"/profiles/{sender.slug}/",
+                      verb=f"Recieved friend request from {sender.first_name} {sender.last_name}",
+                      content_type=content_type,
+                      object_id=OBJ_ID_FRIENDS_REQUESTS,
+                      ).save()
+
         return redirect(request.META.get('HTTP_REFERER'))
     return redirect('profiles:my-profile-view')
 
@@ -289,3 +326,17 @@ def remove_friend(request):
         rel.delete()
         return redirect(request.META.get('HTTP_REFERER'))
     return redirect('profiles:my-profile-view')
+
+
+def create_like_notification(model, post_obj, from_user, verb, object_id):
+    from_user_profile = Profile.objects.get(user=from_user)
+    post_page_profile = Profile.objects.get(id=post_obj.page_id)
+    post_id = post_obj.id
+    content_type = ContentType.objects.get_for_model(model)
+    Notifications(target=post_obj.author.user,
+                  from_user=from_user,
+                  redirect_url=f"/profiles/{post_page_profile.slug}/#post-{post_id}",
+                  verb=f"Recieved {verb} from {from_user_profile.first_name} {from_user_profile.last_name}",
+                  content_type=content_type,
+                  object_id=object_id,
+                  ).save()

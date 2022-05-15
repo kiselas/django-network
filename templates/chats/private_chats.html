@@ -169,9 +169,20 @@
 
               if (data.msg_type === 0) {
                   appendChatMessage(data, false, true)
+                  readMessages()
               }
               if (data.leave) {
                   console.log('leaving room')
+              }
+              if(data.succsess_read_messages){
+                  console.log('Get response from read messages')
+                  let chat_messages = document.getElementsByClassName('chat-message')
+                  for(let msg of chat_messages){
+                      if(msg.classList.contains('unread_message')){
+                          msg.classList.remove('unread_message');
+                          msg.classList.add('read_message');
+                      }
+                  }
               }
 
               if (data.user_info) {
@@ -216,7 +227,6 @@
           } else if (chatSocket.readyState === WebSocket.CONNECTING) {
               console.log("Chat Socket CONNECTING...")
           }
-          document.getElementById("id_chat_message_input").focus()
       }
 
       function displayChatroomLoadingSpinner(isDisplayed) {
@@ -263,6 +273,15 @@
 
       document.getElementById("id_chat_message_submit").addEventListener("click", sendMessageToSocket);
       document.getElementById("id_chat_message_input").addEventListener("keyup", sendMessageOnEnterToSocket);
+      document.getElementById("id_chat_message_input").addEventListener("focus", readMessages);
+
+      function readMessages() {
+          console.log('Read messages from room ' + roomIdGlobal)
+          chatSocket.send(JSON.stringify({
+            "command": "read_messages",
+            "room_id": roomIdGlobal
+          }))
+      }
 
       function clearChatLog(){
           document.getElementsByClassName('chat-messages')[0].innerHTML = "";
@@ -367,17 +386,23 @@
         let msg = data['message']
         let timestamp = data['timestamp']
         let profile_slug = data['profile_slug']
+        let read = data['read']
         createChatMessageElement(profile_image, username,
-                user_id, msg, profile_slug, timestamp,
+                user_id, msg, profile_slug, timestamp, read,
                 maintainPosition, isNewMessage)
       }
 
       function createChatMessageElement(profile_image, username, user_id, msg,
-                                        profile_slug, timestamp, maintainPosition, isNewMessage) {
+                                        profile_slug, timestamp, read, maintainPosition, isNewMessage) {
         let chat_container = document.getElementsByClassName('chat-messages')[0]
         msg = validateText(msg)
+        let classMessage = 'read_message'
+
+        if(read === false || isNewMessage === true){
+            classMessage = 'unread_message'
+        }
         if (isNewMessage) {
-          chat_container.innerHTML += `<div class="chat-message"> \
+          chat_container.innerHTML += `<div class="chat-message ${classMessage}"> \
             <a class="chat-avatar">
               <img src="${profile_image}">
             </a>
@@ -393,7 +418,7 @@
         }
         else {
             let msgDiv = document.createElement('div');
-            msgDiv.classList.add("chat-message");
+            msgDiv.classList.add("chat-message", classMessage);
             msgDiv.innerHTML += `<a class="chat-avatar">
               <img src="${profile_image}">
               </a>
