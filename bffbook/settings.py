@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
+from django.conf.global_settings import DATA_UPLOAD_MAX_MEMORY_SIZE
 from dotenv import load_dotenv
 load_dotenv()
 import os
@@ -120,8 +121,12 @@ CHANNEL_LAYERS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', ''),
     }
 }
 
@@ -164,6 +169,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
+BASE_URL = 'http://' + os.getenv('BASE_URL', '127.0.0.1'),
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static_project')
@@ -171,4 +177,6 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static_cdn', 'static_root')
 MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'media_cdn', 'media_root')
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
 

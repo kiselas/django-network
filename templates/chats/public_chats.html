@@ -72,12 +72,7 @@
 <script type="text/javascript">
       // define websocket for initPublicChat
       let ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
-      {% if debug_mode %}
-      let ws_path = ws_scheme + "://" + window.location.host + "/public_chats/{{room_id}}/"
-
-      {% else %}
       let ws_path = ws_scheme + "://" + window.location.host + "8001/public_chats/{{room_id}}/"
-      {% endif %}
     initPublicChat(ws_path, "{{ room_id }}", "{{ request.user.is_authenticated }}")
 </script>
 {% endblock scripts %}
