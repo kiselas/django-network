@@ -169,7 +169,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
-BASE_URL = 'http://' + os.getenv('BASE_URL', '127.0.0.1'),
+BASE_URL = 'https://' + os.getenv('BASE_URL', '127.0.0.1'),
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static_project')
